@@ -9,6 +9,10 @@ import torch.nn as nn
 from sklearn.model_selection import LeaveOneOut
 from utils import data_process
 
+from models import weights_init, EEG_CNN_Discriminator, EEG_CNN_Generator, EEG_CNN_Subject
+
+from torch.utils.data import TensorDataset, DataLoader
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_epochs", type=int, default=1, help="number of epochs of training")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
@@ -45,9 +49,6 @@ parser.add_argument(
 )
 opt = parser.parse_args()
 
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = True
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 batch_size = 30
@@ -77,164 +78,8 @@ def gen_noise():
     return z, gen_label, gen_subject
 
 
-def weights_init(m):
-    if isinstance(m, nn.Conv1d):
-        torch.nn.init.xavier_uniform_(m.weight)
-        if m.bias is not None:
-            torch.nn.init.zeros_(m.bias)
 
 
-class EEG_CNN_Generator(nn.Module):
-    def __init__(self):
-        super(EEG_CNN_Generator, self).__init__()
-
-        self.nz = nz
-        self.dense = nn.Sequential(nn.Linear(self.nz, 2816), nn.PReLU())
-
-        self.layer1 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=16, out_channels=256, kernel_size=20, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=256),
-            nn.PReLU(),
-        )
-
-        self.layer2 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=256, out_channels=128, kernel_size=10, stride=2, bias=False),
-            nn.PReLU(),
-        )
-
-        self.layer3 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=128, out_channels=64, kernel_size=5, stride=2, bias=False),
-            nn.PReLU(),
-        )
-
-        self.layer4 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=64, out_channels=32, kernel_size=2, stride=1, bias=False),
-            nn.PReLU(),
-        )
-
-        self.layer5 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=32, out_channels=2, kernel_size=1, stride=1, bias=False),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, z):
-        out = self.dense(z)
-        out = out.view(out.size(0), 16, 176)
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = self.layer5(out)
-        return out
-
-
-class EEG_CNN_Discriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=16),
-            nn.PReLU(),
-            nn.Dropout(dropout_level),
-        )
-
-        self.layer2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=10, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=32),
-            nn.PReLU(),
-            nn.Dropout(dropout_level),
-        )
-
-        self.layer3 = nn.Sequential(
-            nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=64),
-            nn.PReLU(),
-            nn.Dropout(dropout_level),
-        )
-
-        self.layer4 = nn.Sequential(
-            nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=128),
-            nn.PReLU(),
-            nn.Dropout(dropout_level),
-        )
-
-        self.layer5 = nn.Sequential(
-            nn.Conv1d(in_channels=128, out_channels=256, kernel_size=2, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=256),
-            nn.PReLU(),
-            nn.Dropout(dropout_level),
-        )
-
-        self.classifier = nn.Linear(2816, 1)
-        self.aux = nn.Linear(2816, 3)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = self.layer5(out)
-        out = out.view(out.size(0), -1)
-        realfake = self.classifier(out)
-        classes = self.aux(out)
-
-        return realfake, classes
-
-
-# The subject network which will be frozen
-
-
-class EEG_CNN_Subject(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=16),
-            nn.PReLU(),
-            nn.Dropout(0.0),
-        )
-
-        self.layer2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=10, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=32),
-            nn.PReLU(),
-            nn.Dropout(0.0),
-        )
-
-        self.layer3 = nn.Sequential(
-            nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=64),
-            nn.PReLU(),
-            nn.Dropout(0.0),
-        )
-
-        self.layer4 = nn.Sequential(
-            nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=128),
-            nn.PReLU(),
-            nn.Dropout(0.0),
-        )
-
-        self.layer5 = nn.Sequential(
-            nn.Conv1d(in_channels=128, out_channels=256, kernel_size=2, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=256),
-            nn.PReLU(),
-            nn.Dropout(0.0),
-        )
-
-        self.classifier = nn.Linear(2816, num_subjects)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = self.layer5(out)
-        out = out.view(out.size(0), -1)
-        out = self.classifier(out)
-
-        return out
 
 
 # Loss function
@@ -400,8 +245,8 @@ def sisgan(datatrain, subject, label, nseed, test_idx):
     label = torch.from_numpy(label)
     subject = torch.from_numpy(subject)
 
-    dataset = torch.utils.data.TensorDataset(datatrain, label, subject)
-    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    dataset = TensorDataset(datatrain, label, subject)
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
     generator = EEG_CNN_Generator().to(device)
     discriminator = EEG_CNN_Discriminator().to(device)

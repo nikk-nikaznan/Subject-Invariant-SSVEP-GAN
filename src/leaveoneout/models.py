@@ -66,3 +66,100 @@ class EEG_CNN_Subject(nn.Module):
 
         return out
     
+
+class EEG_CNN_Generator(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.nz = nz
+        self.dense = nn.Sequential(nn.Linear(self.nz, 2816), nn.PReLU())
+
+        self.layer1 = nn.Sequential(
+            nn.ConvTranspose1d(in_channels=16, out_channels=256, kernel_size=20, stride=2, bias=False),
+            nn.BatchNorm1d(num_features=256),
+            nn.PReLU(),
+        )
+
+        self.layer2 = nn.Sequential(
+            nn.ConvTranspose1d(in_channels=256, out_channels=128, kernel_size=10, stride=2, bias=False),
+            nn.PReLU(),
+        )
+
+        self.layer3 = nn.Sequential(
+            nn.ConvTranspose1d(in_channels=128, out_channels=64, kernel_size=5, stride=2, bias=False),
+            nn.PReLU(),
+        )
+
+        self.layer4 = nn.Sequential(
+            nn.ConvTranspose1d(in_channels=64, out_channels=32, kernel_size=2, stride=1, bias=False),
+            nn.PReLU(),
+        )
+
+        self.layer5 = nn.Sequential(
+            nn.ConvTranspose1d(in_channels=32, out_channels=2, kernel_size=1, stride=1, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, z):
+        out = self.dense(z)
+        out = out.view(out.size(0), 16, 176)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = self.layer5(out)
+        return out
+
+
+class EEG_CNN_Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
+            nn.BatchNorm1d(num_features=16),
+            nn.PReLU(),
+            nn.Dropout(dropout_level),
+        )
+
+        self.layer2 = nn.Sequential(
+            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=10, stride=2, bias=False),
+            nn.BatchNorm1d(num_features=32),
+            nn.PReLU(),
+            nn.Dropout(dropout_level),
+        )
+
+        self.layer3 = nn.Sequential(
+            nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=2, bias=False),
+            nn.BatchNorm1d(num_features=64),
+            nn.PReLU(),
+            nn.Dropout(dropout_level),
+        )
+
+        self.layer4 = nn.Sequential(
+            nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=False),
+            nn.BatchNorm1d(num_features=128),
+            nn.PReLU(),
+            nn.Dropout(dropout_level),
+        )
+
+        self.layer5 = nn.Sequential(
+            nn.Conv1d(in_channels=128, out_channels=256, kernel_size=2, stride=4, bias=False),
+            nn.BatchNorm1d(num_features=256),
+            nn.PReLU(),
+            nn.Dropout(dropout_level),
+        )
+
+        self.classifier = nn.Linear(2816, 1)
+        self.aux = nn.Linear(2816, 3)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = self.layer5(out)
+        out = out.view(out.size(0), -1)
+        realfake = self.classifier(out)
+        classes = self.aux(out)
+
+        return realfake, classes
