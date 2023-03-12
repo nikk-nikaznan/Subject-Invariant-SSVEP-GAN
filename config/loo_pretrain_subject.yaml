@@ -4,6 +4,7 @@ dropout_level: 0.3
 wdecay: 0.005
 batch_size: 16
 num_subjects: 3
+num_class_units: 2816
 
 layers:
   number: 5
@@ -30,4 +31,4 @@ layers:
     - 2
     - 2
     - 2 
-    - 4    
+    - 4

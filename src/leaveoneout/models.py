@@ -23,7 +23,7 @@ class EEG_CNN_Subject(nn.Module):
             == len(self.config["layers"]["out_channels"])
             == len(self.config["layers"]["kernel_sizes"])
             == len(self.config["layers"]["strides"])
-        ), "Please ensure the correct number of each parameter have been passed"
+        ), "Please ensure the correct number of each parameter have been set"
 
         # Iterate over the lists and build the conv layers
         layers: list = []
@@ -49,7 +49,7 @@ class EEG_CNN_Subject(nn.Module):
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(2816, self.config["num_subjects"])
+        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_subjects"])
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         """The forward function to compute a pass through the subject classification model.
@@ -65,3 +65,4 @@ class EEG_CNN_Subject(nn.Module):
         out = self.classifier(out)
 
         return out
+    
