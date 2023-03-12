@@ -8,28 +8,20 @@ import glob
 from utils import data_process
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--n_epochs', type=int, default=800,
-                    help='number of epochs of training')
-parser.add_argument('--lr', type=float, default=0.0001,
-                    help='adam: learning rate')
-parser.add_argument('--b1', type=float, default=0.5,
-                    help='adam: decay of first order momentum of gradient')
-parser.add_argument('--b2', type=float, default=0.999,
-                    help='adam: decay of first order momentum of gradient')
-parser.add_argument('--n_cpu', type=int, default=8,
-                    help='number of cpu threads to use during batch generation')
-parser.add_argument("--n_critic", type=int, default=5,
-                    help="number of training steps for discriminator per iter")
-parser.add_argument('--sample_interval', type=int, default=200,
-                    help='interval between image sampling')
-parser.add_argument('--nz', type=int, default=103,
-                    help="size of the latent z vector used as the generator input.")
+parser.add_argument("--n_epochs", type=int, default=800, help="number of epochs of training")
+parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
+parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
+parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
+parser.add_argument("--n_critic", type=int, default=5, help="number of training steps for discriminator per iter")
+parser.add_argument("--sample_interval", type=int, default=200, help="interval between image sampling")
+parser.add_argument("--nz", type=int, default=103, help="size of the latent z vector used as the generator input.")
 opt = parser.parse_args()
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 batch_size = 30
 dropout_level = 0.5
@@ -44,9 +36,8 @@ def gen_noise():
     gen_label = np.random.randint(0, num_classes, batch_size)
     gen_onehot = np.zeros((batch_size, num_classes))
     gen_onehot[np.arange(batch_size), gen_label] = 1
-    gen_noise_[np.arange(batch_size),
-               :num_classes] = gen_onehot[np.arange(batch_size)]
-    gen_noise = (torch.from_numpy(gen_noise_))
+    gen_noise_[np.arange(batch_size), :num_classes] = gen_onehot[np.arange(batch_size)]
+    gen_noise = torch.from_numpy(gen_noise_)
     gen_noise.data.copy_(gen_noise.view(batch_size, nz))
     z = gen_noise.to(device)
 
@@ -67,39 +58,31 @@ class EEG_CNN_Generator(nn.Module):
         super(EEG_CNN_Generator, self).__init__()
 
         self.nz = nz
-        self.dense = nn.Sequential(
-            nn.Linear(self.nz, 2816),
-            nn.PReLU()
-        )
+        self.dense = nn.Sequential(nn.Linear(self.nz, 2816), nn.PReLU())
 
         self.layer1 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=16, out_channels=256,
-                               kernel_size=20, stride=2, bias=False),
+            nn.ConvTranspose1d(in_channels=16, out_channels=256, kernel_size=20, stride=2, bias=False),
             nn.BatchNorm1d(num_features=256),
-            nn.PReLU())
+            nn.PReLU(),
+        )
 
         self.layer2 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=256, out_channels=128,
-                               kernel_size=10, stride=2, bias=False),
-            nn.PReLU())
+            nn.ConvTranspose1d(in_channels=256, out_channels=128, kernel_size=10, stride=2, bias=False), nn.PReLU()
+        )
 
         self.layer3 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=128, out_channels=64,
-                               kernel_size=5, stride=2, bias=False),
-            nn.PReLU())
+            nn.ConvTranspose1d(in_channels=128, out_channels=64, kernel_size=5, stride=2, bias=False), nn.PReLU()
+        )
 
         self.layer4 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=64, out_channels=32,
-                               kernel_size=2, stride=1, bias=False),
-            nn.PReLU())
+            nn.ConvTranspose1d(in_channels=64, out_channels=32, kernel_size=2, stride=1, bias=False), nn.PReLU()
+        )
 
         self.layer5 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=32, out_channels=2,
-                               kernel_size=1, stride=1, bias=False),
-            nn.Sigmoid())
+            nn.ConvTranspose1d(in_channels=32, out_channels=2, kernel_size=1, stride=1, bias=False), nn.Sigmoid()
+        )
 
     def forward(self, z):
-
         out = self.dense(z)
         out = out.view(out.size(0), 16, 176)
         out = self.layer1(out)
@@ -114,45 +97,44 @@ class EEG_CNN_Discriminator(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer1 = nn.Sequential(
-            nn.Conv1d(in_channels=2, out_channels=16,
-                      kernel_size=20, stride=4, bias=False),
+            nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
             nn.BatchNorm1d(num_features=16),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=32,
-                      kernel_size=10, stride=2, bias=False),
+            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=10, stride=2, bias=False),
             nn.BatchNorm1d(num_features=32),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer3 = nn.Sequential(
-            nn.Conv1d(in_channels=32, out_channels=64,
-                      kernel_size=5, stride=2, bias=False),
+            nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=2, bias=False),
             nn.BatchNorm1d(num_features=64),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer4 = nn.Sequential(
-            nn.Conv1d(in_channels=64, out_channels=128,
-                      kernel_size=3, stride=2, bias=False),
+            nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=False),
             nn.BatchNorm1d(num_features=128),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer5 = nn.Sequential(
-            nn.Conv1d(in_channels=128, out_channels=256,
-                      kernel_size=2, stride=4, bias=False),
+            nn.Conv1d(in_channels=128, out_channels=256, kernel_size=2, stride=4, bias=False),
             nn.BatchNorm1d(num_features=256),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.classifier = nn.Linear(2816, 1)
         self.aux = nn.Linear(2816, 3)
 
     def forward(self, x):
-
         out = self.layer1(x)
         out = self.layer2(out)
         out = self.layer3(out)
@@ -178,10 +160,8 @@ ce_loss.to(device)
 adversarial_loss.to(device)
 
 # Optimizer
-optimizer_Gen = torch.optim.Adam(
-    generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-optimizer_Dis = torch.optim.Adam(
-    discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+optimizer_Gen = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+optimizer_Dis = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
 # 1 for real, 0 for fake
 real_label = 1
@@ -205,8 +185,7 @@ def training_GAN(dataloader):
 
             # Configure input
             input_data = real_data.data
-            dis_label = torch.empty(input_size, 1).to(
-                device)  # Discriminator label
+            dis_label = torch.empty(input_size, 1).to(device)  # Discriminator label
 
             z, z_label = gen_noise()
             # ---------------------
@@ -235,8 +214,7 @@ def training_GAN(dataloader):
                 fake_data = generator(z)
 
                 dis_label.data.fill_(fake_label)
-                aux_label.data.resize_(input_size).copy_(
-                    torch.from_numpy(z_label))
+                aux_label.data.resize_(input_size).copy_(torch.from_numpy(z_label))
 
                 dis_output, aux_output = discriminator(fake_data.detach())
                 dis_errD_fake = adversarial_loss(dis_output, dis_label)
@@ -270,14 +248,22 @@ def training_GAN(dataloader):
                 errG.backward()
                 optimizer_Gen.step()
 
-        print("[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f] " %
-              (epoch, opt.n_epochs, i, len(dataloader), errD.item(), errG.item(), ))
+        print(
+            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f] "
+            % (
+                epoch,
+                opt.n_epochs,
+                i,
+                len(dataloader),
+                errD.item(),
+                errG.item(),
+            )
+        )
 
     return
 
 
 def generate_GAN():
-
     new_data = []
     new_label = []
     generator.eval()
@@ -290,9 +276,8 @@ def generate_GAN():
                 eval_label = (np.zeros((batch_size,), dtype=int)) + nclass
                 eval_onehot = np.zeros((batch_size, num_classes))
                 eval_onehot[np.arange(batch_size), eval_label] = 1
-                eval_noise_[
-                    np.arange(batch_size), :num_classes] = eval_onehot[np.arange(batch_size)]
-                eval_noise = (torch.from_numpy(eval_noise_))
+                eval_noise_[np.arange(batch_size), :num_classes] = eval_onehot[np.arange(batch_size)]
+                eval_noise = torch.from_numpy(eval_noise_)
                 eval_noise.data.copy_(eval_noise.view(batch_size, nz))
                 z = eval_noise.to(device)
                 z = z.float()
@@ -314,7 +299,6 @@ def generate_GAN():
 
 
 def acgan(datatrain, label, nseed):
-
     random.seed(nseed)
     np.random.seed(nseed)
     torch.manual_seed(nseed)
@@ -324,8 +308,7 @@ def acgan(datatrain, label, nseed):
     label = torch.from_numpy(label)
 
     dataset = torch.utils.data.TensorDataset(datatrain, label)
-    dataloader = torch.utils.data.DataLoader(
-        dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     # training GAN
     training_GAN(dataloader)

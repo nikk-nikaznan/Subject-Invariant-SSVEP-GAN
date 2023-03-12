@@ -1,188 +1,127 @@
+import argparse
+import random
+
+import numpy as np
 import torch
 import torch.nn as nn
-
-import glob
-import random
-import numpy as np
-from pathlib import Path
-
+import yaml
+from models import EEG_CNN_Subject, weights_init
 from sklearn.model_selection import LeaveOneOut
-from utils import data_process
+from torch.utils.data import DataLoader, TensorDataset
+from utils import get_accuracy, load_data, save_model
 
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = True
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-
-def weights_init(m):
-    if isinstance(m, nn.Conv1d):
-        torch.nn.init.xavier_uniform_(m.weight)
-        if m.bias is not None:
-            torch.nn.init.zeros_(m.bias)
-
-
-class EEG_CNN_Subject(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv1d(in_channels=2, out_channels=16,
-                      kernel_size=20, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=16),
-            nn.PReLU(),
-            nn.Dropout(dropout_level))
-
-        self.layer2 = nn.Sequential(
-            nn.Conv1d(in_channels=16, out_channels=32,
-                      kernel_size=10, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=32),
-            nn.PReLU(),
-            nn.Dropout(dropout_level))
-
-        self.layer3 = nn.Sequential(
-            nn.Conv1d(in_channels=32, out_channels=64,
-                      kernel_size=5, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=64),
-            nn.PReLU(),
-            nn.Dropout(dropout_level))
-
-        self.layer4 = nn.Sequential(
-            nn.Conv1d(in_channels=64, out_channels=128,
-                      kernel_size=3, stride=2, bias=False),
-            nn.BatchNorm1d(num_features=128),
-            nn.PReLU(),
-            nn.Dropout(dropout_level))
-
-        self.layer5 = nn.Sequential(
-            nn.Conv1d(in_channels=128, out_channels=256,
-                      kernel_size=2, stride=4, bias=False),
-            nn.BatchNorm1d(num_features=256),
-            nn.PReLU(),
-            nn.Dropout(dropout_level))
-
-        self.classifier = nn.Linear(2816, num_subjects)
-
-    def forward(self, x):
-
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = self.layer5(out)
-        out = out.view(out.size(0), -1)
-        out = self.classifier(out)
-
-        return out
-
-
-def get_accuracy(actual, predicted):
-    # actual: cuda longtensor variable
-    # predicted: cuda longtensor variable
-    assert (actual.size(0) == predicted.size(0))
-    return float(actual.eq(predicted).sum()) / actual.size(0)
-
-
-def save_model(epoch, subject_predictor, optimizer_Pred, test_idx, filepath="pretrain_subject_unseen%i.cpt"):
-    """Save the model and embeddings"""
-
-    state = {
-        'epoch': epoch,
-        'state_dict': subject_predictor.state_dict(),
-        'optimizer': optimizer_Pred.state_dict()
-    }
-
-    torch.save(state, filepath % (test_idx))
-    print("Model Saved")
-
-
-seed_n = np.random.randint(500)
+# Setting seeds for reproducibility
+seed_n = 42
 random.seed(seed_n)
 np.random.seed(seed_n)
 torch.manual_seed(seed_n)
 torch.cuda.manual_seed(seed_n)
 
-# Hyper Parameters
-num_epochs = 200
-learning_rate = 0.0001
-dropout_level = 0.3
-wdecay = 0.005
-batch_size = 16
 
-# data input
-main_path = f"{Path.home()}/Data/EEG/Offline_Experiment/Train/"
-eeg_path = glob.glob(main_path + "S0*/")
+class Pretrain_Subject:
+    def __init__(self, config_file: str) -> None:
+        self.config_file = config_file
+        self.input_data = load_data()
+        self.load_config_yaml()
 
-input_data = []
-for f in eeg_path:
-    eeg_files = glob.glob(f + "data/*.npy")
-    eeg_data = [np.load(f) for f in (eeg_files)]
-    eeg_data = np.asarray(np.concatenate(eeg_data))
-    eeg_data = data_process(eeg_data)
-    input_data.append(eeg_data)
+    def load_config_yaml(self) -> None:
+        """Load a YAML file describing the training setup"""
 
-data_input = np.asarray(input_data)
-data_input = data_input.swapaxes(2, 3)
+        with open(self.config_file, "r") as f:
+            self.config = yaml.safe_load(f)
+
+    def _load_model(self) -> None:
+        """Load the EEG subject classification model"""
+
+        # Build the subject classification model and initalise weights
+        self.subject_predictor = EEG_CNN_Subject(self.config).to(device)
+        self.subject_predictor.apply(weights_init)
+
+    def _build_training_objects(self) -> None:
+        """Create the training objects"""
+
+        # Loss and Optimizer
+        self.ce_loss = nn.CrossEntropyLoss()
+        self.optimizer_Pred = torch.optim.Adam(
+            self.subject_predictor.parameters(),
+            lr=self.config["learning_rate"],
+            weight_decay=self.config["wdecay"],
+        )
+
+    def _train_model(self) -> None:
+        """Train a model using the provided configuration"""
+
+        # loop through the required number of epochs
+        for epoch in range(self.config["num_epochs"]):
+            print("Epoch:", epoch)
+            cumulative_accuracy = 0.0
+
+            # loop over all of the batches
+            for i, data in enumerate(self.trainloader, 0):
+                # format the data from the dataloader
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
+                inputs = inputs.float()
+
+                # Forward + Backward + Optimize
+                self.optimizer_Pred.zero_grad()
+                outputs = self.subject_predictor(inputs)
+                loss = self.ce_loss(outputs, labels)
+                loss.backward()
+                self.optimizer_Pred.step()
+
+                # calculate the accuracy over the training batch
+                _, predicted = torch.max(outputs, 1)
+
+                cumulative_accuracy += get_accuracy(labels, predicted)
+        print("Training Accuracy: %2.1f" % ((cumulative_accuracy / len(self.trainloader) * 100)))
+        save_model(epoch, self.subject_predictor, self.optimizer_Pred, self.test_idx)
+
+    def perform_loo(self) -> None:
+        """Perform the leave one out analysis for each subject in the training dataset"""
+
+        loo = LeaveOneOut()
+
+        for self.train_idx, self.test_idx in loo.split(self.input_data):
+            print(self.train_idx, self.test_idx)
+
+            datainput = self.input_data[self.train_idx]
+            train_subject = []
+            for num_s in range(datainput.shape[0]):
+                train_subject.append(np.zeros(datainput.shape[1]) + num_s)
+
+            train_subject = np.array(train_subject).astype(np.int64)
+            EEGsubject = np.concatenate(train_subject)
+            EEGdata = np.concatenate(datainput)
+
+            # convert NumPy Array to Torch Tensor
+            train_input = torch.from_numpy(EEGdata)
+            train_label = torch.from_numpy(EEGsubject)
+
+            # create the data loader for the training set
+            self.trainloader = DataLoader(
+                dataset=TensorDataset(train_input, train_label),
+                batch_size=self.config["batch_size"],
+                shuffle=True,
+                num_workers=0,
+            )
+
+            self._load_model()
+            self._build_training_objects()
+            self._train_model()
 
 
-loo = LeaveOneOut()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config_file",
+        type=str,
+        default="config/loo_pretrain_subject.yaml",
+        help="location of YAML config to control training",
+    )
+    args = parser.parse_args()
 
-for train_idx, test_idx in loo.split(data_input):
-    print(train_idx, test_idx)
-
-    datainput = data_input[train_idx]
-
-    train_subject = []
-    for num_s in range(datainput.shape[0]):
-        train_subject.append(np.zeros(datainput.shape[1]) + num_s)
-
-    train_subject = np.asarray(train_subject)
-    num_subjects = train_subject.shape[0]
-    train_subject = train_subject.astype(np.int64)
-    EEGsubject = np.concatenate(train_subject)
-
-    EEGdata = np.concatenate(datainput)
-
-    subject_predictor = EEG_CNN_Subject().to(device)
-    subject_predictor.apply(weights_init)
-
-    # Loss and Optimizer
-    ce_loss = nn.CrossEntropyLoss()
-    optimizer_Pred = torch.optim.Adam(
-        subject_predictor.parameters(), lr=learning_rate, weight_decay=wdecay)
-
-    # convert NumPy Array to Torch Tensor
-    train_input = torch.from_numpy(EEGdata)
-    train_label = torch.from_numpy(EEGsubject)
-
-    # create the data loader for the training set
-    trainset = torch.utils.data.TensorDataset(train_input, train_label)
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size, shuffle=True, num_workers=0)
-
-    # loop through the required number of epochs
-    for epoch in range(num_epochs):
-        print("Epoch:", epoch)
-        cumulative_accuracy = 0
-        for i, data in enumerate(trainloader, 0):
-            # format the data from the dataloader
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-            # inputs, labels = Variable(inputs), Variable(labels)
-            inputs = inputs.float()
-
-            # Forward + Backward + Optimize
-            optimizer_Pred.zero_grad()
-            outputs = subject_predictor(inputs)
-            loss = ce_loss(outputs, labels)
-            loss.backward()
-            optimizer_Pred.step()
-
-            # calculate the accuracy over the training batch
-            _, predicted = torch.max(outputs, 1)
-
-            cumulative_accuracy += get_accuracy(labels, predicted)
-    print("Training Loss:", loss.data)
-    print("Training Accuracy: %2.1f" %
-          ((cumulative_accuracy/len(trainloader)*100)))
-
-    save_model(epoch, subject_predictor, optimizer_Pred, test_idx)
+    trainer = Pretrain_Subject(config_file=args.config_file)
+    trainer.perform_loo()

@@ -11,13 +11,15 @@ from sklearn.model_selection import LeaveOneOut
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
-device  = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def weights_init(m):
     if isinstance(m, nn.Conv1d):
         torch.nn.init.xavier_uniform_(m.weight)
         if m.bias is not None:
-            torch.nn.init.zeros_(m.bias)   
+            torch.nn.init.zeros_(m.bias)
+
 
 class CNN(nn.Module):
     def __init__(self):
@@ -26,34 +28,37 @@ class CNN(nn.Module):
             nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
             nn.BatchNorm1d(num_features=16),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer2 = nn.Sequential(
             nn.Conv1d(in_channels=16, out_channels=32, kernel_size=10, stride=2, bias=False),
             nn.BatchNorm1d(num_features=32),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer3 = nn.Sequential(
             nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=2, bias=False),
             nn.BatchNorm1d(num_features=64),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer4 = nn.Sequential(
             nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=2, bias=False),
             nn.BatchNorm1d(num_features=128),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
+            nn.Dropout(dropout_level),
+        )
 
         self.layer5 = nn.Sequential(
             nn.Conv1d(in_channels=128, out_channels=256, kernel_size=2, stride=4, bias=False),
             nn.BatchNorm1d(num_features=256),
             nn.PReLU(),
-            nn.Dropout(dropout_level))
-        self.dense_layers = nn.Sequential(
-            nn.Linear(2816, num_classes)
-            )
+            nn.Dropout(dropout_level),
+        )
+        self.dense_layers = nn.Sequential(nn.Linear(2816, num_classes))
 
     def forward(self, x):
         out = self.layer1(x)
@@ -62,14 +67,16 @@ class CNN(nn.Module):
         out = self.layer4(out)
         out = self.layer5(out)
         out = out.view(out.size(0), -1)
-        out = self.dense_layers(out)     
+        out = self.dense_layers(out)
         return out
+
 
 def get_accuracy(actual, predicted):
     # actual: cuda longtensor variable
     # predicted: cuda longtensor variable
-    assert(actual.size(0) == predicted.size(0))
+    assert actual.size(0) == predicted.size(0)
     return float(actual.eq(predicted).sum()) / actual.size(0)
+
 
 seed_n = np.random.randint(500)
 print(seed_n)
@@ -98,10 +105,30 @@ real_label = np.asarray(real_label)
 real_label = real_label.astype(np.int64)
 
 # fake data
-fake_data = [data_fake_unseenS01, data_fake_unseenS02, data_fake_unseenS03, data_fake_unseenS04, data_fake_unseenS05, data_fake_unseenS06, data_fake_unseenS07, data_fake_unseenS08, data_fake_unseenS09]
+fake_data = [
+    data_fake_unseenS01,
+    data_fake_unseenS02,
+    data_fake_unseenS03,
+    data_fake_unseenS04,
+    data_fake_unseenS05,
+    data_fake_unseenS06,
+    data_fake_unseenS07,
+    data_fake_unseenS08,
+    data_fake_unseenS09,
+]
 # data_fake_unseenS0X.shape = (1440, 2, 1500)
 fake_data = np.asarray(fake_data)
-fake_label = [label_fake_unseenS01, label_fake_unseenS02, label_fake_unseenS03, label_fake_unseenS04, label_fake_unseenS05, label_fake_unseenS06, label_fake_unseenS07, label_fake_unseenS08, label_fake_unseenS09]
+fake_label = [
+    label_fake_unseenS01,
+    label_fake_unseenS02,
+    label_fake_unseenS03,
+    label_fake_unseenS04,
+    label_fake_unseenS05,
+    label_fake_unseenS06,
+    label_fake_unseenS07,
+    label_fake_unseenS08,
+    label_fake_unseenS09,
+]
 fake_label = np.asarray(fake_label)
 fake_label = fake_label.astype(np.int64)
 
@@ -118,7 +145,7 @@ optimizer = torch.optim.Adam(cnn.parameters(), lr=learning_rate, weight_decay=wd
 # train_input = [real_data, fake_data]
 # train_input = np.asarray(train_input)
 # train_label = [real_label[train_idx], fake_label[test_idx]]
-# train_label = np.asarray(train_label) 
+# train_label = np.asarray(train_label)
 
 # For non-augmentation -- real
 train_input = real_data
@@ -130,7 +157,7 @@ train_label = real_label
 # ***************************************************************
 
 train_input = np.concatenate(train_input)
-train_label = np.concatenate(train_label) 
+train_label = np.concatenate(train_label)
 
 # convert NumPy Array to Torch Tensor
 train_input = torch.from_numpy(train_input)
@@ -150,18 +177,18 @@ for epoch in range(num_epochs):
         inputs, labels = data
         inputs, labels = inputs.to(device), labels.to(device)
         inputs = inputs.float()
-        
+
         # Forward + Backward + Optimize
         optimizer.zero_grad()
         outputs = cnn(inputs)
-        
+
         loss = ce_loss(outputs, labels)
         loss.backward()
         optimizer.step()
 
         # calculate the accuracy over the training batch
         _, predicted = torch.max(outputs, 1)
-        
+
         cumulative_accuracy += get_accuracy(labels, predicted)
     # print("Training Loss:", loss.item())
     # print("Training Accuracy: %2.1f" % ((cumulative_accuracy/len(trainloader)*100)))
@@ -194,11 +221,11 @@ for i, data in enumerate(testloader, 0):
     test_inputs, test_labels = data
     test_inputs, test_labels = test_inputs.to(device), test_labels.to(device)
     # inputs, labels = Variable(inputs), Variable(labels)
-    test_inputs = test_inputs.float()    
+    test_inputs = test_inputs.float()
 
     test_outputs = cnn(test_inputs)
-    _, test_predicted = torch.max(test_outputs, 1)    
-    test_acc = get_accuracy(test_labels,test_predicted)
+    _, test_predicted = torch.max(test_outputs, 1)
+    test_acc = get_accuracy(test_labels, test_predicted)
     test_cumulative_accuracy += test_acc
 
-print("Test Accuracy: %2.1f" % ((test_cumulative_accuracy/len(testloader)*100)))
+print("Test Accuracy: %2.1f" % ((test_cumulative_accuracy / len(testloader) * 100)))
