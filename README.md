@@ -1,4 +1,9 @@
 # Subject-Invariant-SSVEP-GAN
+
+[![Arxiv](https://img.shields.io/badge/ArXiv-2112.06567-orange.svg)](https://arxiv.org/abs/2007.11544)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/pykeen)](https://img.shields.io/pypi/pyversions/pykeen)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Code to accompany our International Conference on Pattern Recognition (ICPR) paper entitled -
 [Leveraging Synthetic Subject Invariant EEG Signalsfor Zero Calibration BCI](https://arxiv.org/pdf/2007.11544.pdf).
 
@@ -16,12 +21,11 @@ The code is structured as follows:
 - `CNN_SSVEP_Classification.py ` our SSVEP classification network;
 
 ## Dependencies and Requirements
-The code has been designed to support python 3.6+ only. The project has the following dependencies and version requirements:
+The code has been designed to support python 3.7+ only. The dependencies for the project can be installed via pip using the requirements.txt as follows:
 
-- torch=1.1.0+
-- numpy=1.16++
-- python=3.6.5+
-- scipy=1.1.0+
+```shell
+$ pip install -r requirements.txt
+```
 
 ## Cite
 

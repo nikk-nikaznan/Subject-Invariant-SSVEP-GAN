@@ -4,3 +4,30 @@ dropout_level: 0.3
 wdecay: 0.005
 batch_size: 16
 num_subjects: 3
+
+layers:
+  number: 5
+  in_channels:
+    - 2
+    - 16
+    - 32
+    - 64
+    - 128
+  out_channels:
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+  kernel_sizes:
+    - 20
+    - 10
+    - 5
+    - 3
+    - 2 
+  strides:
+    - 4
+    - 2
+    - 2
+    - 2 
+    - 4    
