@@ -1,6 +1,12 @@
 import torch
 import torch.nn as nn
+from class_resolver import ClassResolver
 
+activation_resolver = ClassResolver(
+    [nn.PReLU, nn.Sigmoid],
+    base=nn.Module,
+    default=nn.PReLU,
+)
 
 def weights_init(m: nn.Module) -> None:
     if isinstance(m, nn.Conv1d):
@@ -117,7 +123,7 @@ class EEG_CNN_Discriminator(nn.Module):
         self.layer1 = nn.Sequential(
             nn.Conv1d(in_channels=2, out_channels=16, kernel_size=20, stride=4, bias=False),
             nn.BatchNorm1d(num_features=16),
-            nn.PReLU(),
+            activation_resolver.make(activation("prelu"),
             nn.Dropout(dropout_level),
         )
 
