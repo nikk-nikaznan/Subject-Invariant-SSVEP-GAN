@@ -10,27 +10,37 @@ nz: 103
 lmbd: 0.3
 
 layers_gen:
-  number: 4
+  number: 5
   in_channels:
     - 16
     - 256
     - 128
     - 64
+    - 32
   out_channels:
     - 256
     - 128
     - 64
     - 32
+    - 2
   kernel_sizes:
     - 20
     - 10
     - 5
     - 2
+    - 1
   strides:
     - 2
     - 2
     - 2
     - 1 
+    - 1
+  activations:
+    - prelu
+    - prelu
+    - prelu
+    - prelu
+    - sigmoid
 
 layers_dis:
   number: 5

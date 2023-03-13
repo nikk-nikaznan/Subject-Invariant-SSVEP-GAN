@@ -5,9 +5,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-from models import EEG_CNN_SSVEP, weights_init
 from sklearn.model_selection import LeaveOneOut
 from torch.utils.data import DataLoader, TensorDataset
+
+from models import EEG_CNN_SSVEP, weights_init
 from utils import get_accuracy, load_data, load_label
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -77,7 +78,10 @@ class SSVEP_Class:
                 _, predicted = torch.max(outputs, 1)
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
-        print("Training Accuracy: %2.1f" % ((cumulative_accuracy / len(self.trainloader) * 100)))
+        print(
+            "Training Accuracy: %2.1f"
+            % ((cumulative_accuracy / len(self.trainloader) * 100))
+        )
 
     def perform_loo(self) -> None:
         """Perform the leave one out analysis for each subject in the training dataset"""

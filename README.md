@@ -23,7 +23,7 @@ The code has been designed to support python 3.7+ only. The dependencies for the
 $ pip install -r requirements.txt
 ```
 ## How to Use
-The ```sample_data``` folder contains some random noise data to represent the data shape of the input data. It is not the real EEG data.
+The ```sample_data``` folder contains randomly generated data that is used to represent the shape of the input data. It is important to note this is not the real EEG data.
 
 First, create the pretrain subject weight. This can be done by using the ```CNNN_pretrainsubject.py```.
 
@@ -31,15 +31,19 @@ Then, train SIS-GAN in ```SIS-GAN.py```by using the pretrain subject weight as a
 
 Lastly, evaluate the performance of the generated synthetic data by using ```CNN_SSVEP_classification```.
 
+Model configurations are controlled by using yaml files that can be found in the config directory. This can be changed to customise the model accordingly.
+
 ## Cite
 
-Please cite the associated papers for this work if you use this code:
+Please cite the associated paper for this work if you use this code:
 
 ```
-@article{aznan2020leveraging,
+@inproceedings{aznan2021leveraging,
   title={Leveraging Synthetic Subject Invariant EEG Signals for Zero Calibration BCI},
   author={Aznan, Nik Khadijah Nik and Atapour-Abarghouei, Amir and Bonner, Stephen and Connolly, Jason D and Breckon, Toby P},
-  journal={arXiv preprint arXiv:2007.11544},
-  year={2020}
+  booktitle={2020 25th International Conference on Pattern Recognition (ICPR)},
+  pages={10418--10425},
+  year={2021},
+  organization={IEEE}
 }
 ```

@@ -5,9 +5,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-from models import EEG_CNN_Generator, EEG_CNN_Discriminator, weights_init
 from sklearn.model_selection import LeaveOneOut
 from torch.utils.data import DataLoader, TensorDataset
+
+from models import EEG_CNN_Discriminator, EEG_CNN_Generator, weights_init
 from utils import load_data, load_label
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -38,7 +39,8 @@ class SIS_GAN:
 
         # Load the pretrain subject predictor
         self.subject_predictor = torch.load(
-            "pretrain_subject_unseen%i.pt" % (self.test_idx), map_location=torch.device("cuda:0")
+            "pretrain_subject_unseen%i.pt" % (self.test_idx),
+            map_location=torch.device("cpu"),
         )
 
     def _load_model(self) -> None:
@@ -72,11 +74,22 @@ class SIS_GAN:
     def _gen_noise(self) -> None:
         """Generate random noise and set the last elements to a random selection of one hot labels"""
 
-        gen_noise_ = np.random.normal(0, 1, (self.config["batch_size"], self.config["nz"]))
+        gen_noise_ = np.random.normal(
+            0, 1, (self.config["batch_size"], self.config["nz"])
+        )
+        self.gen_label = np.random.randint(
+            0, self.config["num_aux_class"], self.config["batch_size"]
+        )
+        gen_onehot = np.zeros((self.config["batch_size"], self.config["num_aux_class"]))
+        gen_onehot[np.arange(self.config["batch_size"]), self.gen_label] = 1
+        gen_noise_[
+            np.arange(self.config["batch_size"]), : self.config["num_aux_class"]
+        ] = gen_onehot[np.arange(self.config["batch_size"])]
         gen_noise = torch.from_numpy(gen_noise_)
+        gen_noise.data.copy_(
+            gen_noise.view(self.config["batch_size"], self.config["nz"])
+        )
         self.z = gen_noise.to(device).float()
-        self.gen_label = np.random.randint(0, self.config["num_aux_class"], self.config["batch_size"])
-        self.gen_subject = np.random.randint(0, self.config["num_subjects"], self.config["batch_size"])
 
     def _train_model(self) -> None:
         """Train GAN using the provided configuration"""
@@ -88,11 +101,10 @@ class SIS_GAN:
             # loop over all of the batches
             for i, data in enumerate(self.trainloader, 0):
                 # format the data from the dataloader
-                real_data, real_aux_label, real_subject = data
-                real_data, real_aux_label, real_subject = (
+                real_data, real_aux_label = data
+                real_data, real_aux_label = (
                     real_data.to(device),
                     real_aux_label.to(device),
-                    real_subject.to(device),
                 )
                 real_data = real_data.float()
                 real_aux_label = real_aux_label.long()
@@ -112,7 +124,6 @@ class SIS_GAN:
 
                 dis_label.data.fill_(1)
                 aux_label = real_aux_label.data
-                subject_label = real_subject.data
 
                 dis_output, aux_output = self.discriminator(input_data)
                 dis_errD_real = self.adversarial_loss(dis_output, dis_label)
@@ -125,8 +136,9 @@ class SIS_GAN:
                 fake_data = self.generator(self.z)
 
                 dis_label.data.fill_(0)
-                aux_label.data.resize_(input_size).copy_(torch.from_numpy(self.gen_label))
-                subject_label.data.resize_(input_size).copy_(torch.from_numpy(self.gen_subject))
+                aux_label.data.resize_(input_size).copy_(
+                    torch.from_numpy(self.gen_label)
+                )
 
                 dis_output, aux_output = self.discriminator(fake_data.detach())
                 dis_errD_fake = self.adversarial_loss(dis_output, dis_label)
@@ -185,16 +197,25 @@ class SIS_GAN:
             # generate n data per class
             for nclass in range(self.config["num_aux_class"]):
                 for n in range(self.config["num_epochs"]):
-                    eval_noise_ = np.random.normal(0, 1, (self.config["batch_size"], self.config["nz"]))
+                    eval_noise_ = np.random.normal(
+                        0, 1, (self.config["batch_size"], self.config["nz"])
+                    )
                     # Here we are create a vector of size BS with the chosen class
-                    eval_label = (np.zeros((self.config["batch_size"],), dtype=int)) + nclass
-                    eval_onehot = np.zeros((self.config["batch_size"], self.config["num_aux_class"]))
+                    eval_label = (
+                        np.zeros((self.config["batch_size"],), dtype=int)
+                    ) + nclass
+                    eval_onehot = np.zeros(
+                        (self.config["batch_size"], self.config["num_aux_class"])
+                    )
                     eval_onehot[np.arange(self.config["batch_size"]), eval_label] = 1
-                    eval_noise_[np.arange(self.config["batch_size"]), : self.config["num_aux_class"]] = eval_onehot[
-                        np.arange(self.config["batch_size"])
-                    ]
+                    eval_noise_[
+                        np.arange(self.config["batch_size"]),
+                        : self.config["num_aux_class"],
+                    ] = eval_onehot[np.arange(self.config["batch_size"])]
                     eval_noise = torch.from_numpy(eval_noise_)
-                    eval_noise.data.copy_(eval_noise.view(self.config["batch_size"], self.config["nz"]))
+                    eval_noise.data.copy_(
+                        eval_noise.view(self.config["batch_size"], self.config["nz"])
+                    )
                     z = eval_noise.to(device).float()
 
                     fake_data = self.generator(z)
@@ -223,23 +244,17 @@ class SIS_GAN:
 
             datainput = self.input_data[self.train_idx]
             labelinput = self.input_label[self.train_idx]
-            subjectinput = []
-            for num_s in range(datainput.shape[0]):
-                subjectinput.append(np.zeros(datainput.shape[1]) + num_s)
 
-            subjectinput = np.array(subjectinput).astype(np.int64)
-            EEGsubject = np.concatenate(subjectinput)
             EEGdata = np.concatenate(datainput)
             EEGlabel = np.concatenate(labelinput)
 
             # convert NumPy Array to Torch Tensor
             train_input = torch.from_numpy(EEGdata)
             train_label = torch.from_numpy(EEGlabel)
-            train_subject = torch.from_numpy(EEGsubject)
 
             # create the data loader for the training set
             self.trainloader = DataLoader(
-                dataset=TensorDataset(train_input, train_label, train_subject),
+                dataset=TensorDataset(train_input, train_label),
                 batch_size=self.config["batch_size"],
                 shuffle=True,
                 num_workers=0,

@@ -16,7 +16,9 @@ class Softmax_Class:
         """Load the pretrain subject classification model"""
 
         # Load the pretrain subject predictor
-        self.subject_predictor = torch.load("pretrain_subject_unseen0.pt", map_location=torch.device("cuda:0"))
+        self.subject_predictor = torch.load(
+            "pretrain_subject_unseen0.pt", map_location=torch.device("cuda:0")
+        )
 
     def _test_model(self) -> None:
         """Test the model on test dataset"""

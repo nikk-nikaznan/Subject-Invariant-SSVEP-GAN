@@ -5,9 +5,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-from models import EEG_CNN_Subject, weights_init
 from sklearn.model_selection import LeaveOneOut
 from torch.utils.data import DataLoader, TensorDataset
+
+from models import EEG_CNN_Subject, weights_init
 from utils import get_accuracy, load_data, save_model
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -76,7 +77,10 @@ class Pretrain_Subject:
                 _, predicted = torch.max(outputs, 1)
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
-        print("Training Accuracy: %2.1f" % ((cumulative_accuracy / len(self.trainloader) * 100)))
+        print(
+            "Training Accuracy: %2.1f"
+            % ((cumulative_accuracy / len(self.trainloader) * 100))
+        )
         save_model(self.subject_predictor, self.test_idx)
 
     def perform_loo(self) -> None:

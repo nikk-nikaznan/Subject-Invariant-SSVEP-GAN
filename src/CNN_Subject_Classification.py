@@ -5,10 +5,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-from leaveoneout.models import EEG_CNN_Subject, weights_init
-from torch.utils.data import DataLoader, TensorDataset
-from leaveoneout.utils import get_accuracy, load_data, load_label, save_model
 from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import DataLoader, TensorDataset
+
+from models import EEG_CNN_Subject, weights_init
+from utils import get_accuracy, load_data, load_label, save_model
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -77,7 +78,10 @@ class Subject_Class:
                 _, predicted = torch.max(outputs, 1)
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
-        print("Training Accuracy: %2.1f" % ((cumulative_accuracy / len(self.trainloader) * 100)))
+        print(
+            "Training Accuracy: %2.1f"
+            % ((cumulative_accuracy / len(self.trainloader) * 100))
+        )
 
     def _test_model(self) -> None:
         """Train a model using the provided configuration"""
@@ -95,7 +99,10 @@ class Subject_Class:
             test_acc = get_accuracy(test_labels, test_predicted)
             test_cumulative_accuracy += test_acc
 
-        print("Test Accuracy: %2.1f" % ((test_cumulative_accuracy / len(self.testloader) * 100)))
+        print(
+            "Test Accuracy: %2.1f"
+            % ((test_cumulative_accuracy / len(self.testloader) * 100))
+        )
 
     def perform_kfold(self) -> None:
         """Preparing data for the training"""

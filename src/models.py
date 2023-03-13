@@ -1,7 +1,8 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 from class_resolver import ClassResolver
-from itertools import chain
 
 activation_resolver = ClassResolver(
     [nn.PReLU, nn.Sigmoid],
@@ -57,7 +58,9 @@ class EEG_CNN_Subject(nn.Module):
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_subjects"])
+        self.classifier = nn.Linear(
+            self.config["num_class_units"], self.config["num_subjects"]
+        )
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         """The forward function to compute a pass through the subject classification model.
@@ -65,7 +68,7 @@ class EEG_CNN_Subject(nn.Module):
         Args:
             x (torch.FloatTensor): The raw input EEG data to be passed through the model.
         Returns:
-            torch.FloatTensor: Class predictions for the input dataset.
+            torch.FloatTensor: Subject class predictions for the input dataset.
         """
 
         out = self.conv_layers(x)
@@ -81,13 +84,10 @@ class EEG_CNN_Generator(nn.Module):
     def __init__(
         self,
         config: dict,
-        activation: None | str | nn.Module | type[nn.Module] = None,
-        activation_kwargs: None | dict[str, any] = None,
     ) -> None:
         super().__init__()
 
         self.config = config
-        activation_resolver.make(activation, activation_kwargs)
 
         # Check the layer build lists are all the same size
         assert (
@@ -96,17 +96,19 @@ class EEG_CNN_Generator(nn.Module):
             == len(self.config["layers_gen"]["out_channels"])
             == len(self.config["layers_gen"]["kernel_sizes"])
             == len(self.config["layers_gen"]["strides"])
+            == len(self.config["layers_gen"]["activations"])
         ), "Please ensure the correct number of each parameter have been set"
 
         self.dense = nn.Sequential(nn.Linear(103, 2816), nn.PReLU())
 
         # Iterate over the lists and build the conv layers
         layers: list = []
-        for in_features, out_features, kernel_size, stride in zip(
+        for in_features, out_features, kernel_size, stride, activation in zip(
             self.config["layers_gen"]["in_channels"],
             self.config["layers_gen"]["out_channels"],
             self.config["layers_gen"]["kernel_sizes"],
             self.config["layers_gen"]["strides"],
+            self.config["layers_gen"]["activations"],
         ):
             layers.extend(
                 (
@@ -117,22 +119,22 @@ class EEG_CNN_Generator(nn.Module):
                         stride=stride,
                         bias=False,
                     ),
-                    # nn.PReLU(),
-                    activation_resolver.make(activation, activation_kwargs),
+                    activation_resolver.make(activation),
                 )
             )
         self.convTranspose_layers = nn.Sequential(*layers)
 
-        self.layer5 = nn.Sequential(
-            nn.ConvTranspose1d(in_channels=32, out_channels=2, kernel_size=1, stride=1, bias=False),
-            nn.Sigmoid(),
-        )
+    def forward(self, z: torch.FloatTensor) -> torch.FloatTensor:
+        """The forward function to compute a pass through the generator model.
 
-    def forward(self, z):
+        Args:
+            z (torch.FloatTensor): The random noise to be passed through the model.
+        Returns:
+            torch.FloatTensor: Generated data.
+        """
         out = self.dense(z)
         out = out.view(out.size(0), 16, 176)
         out = self.convTranspose_layers(out)
-        out = self.layer5(out)
         return out
 
 
@@ -177,9 +179,20 @@ class EEG_CNN_Discriminator(nn.Module):
         self.conv_layers = nn.Sequential(*layers)
 
         self.classifier = nn.Linear(self.config["num_class_units"], 1)
-        self.aux = nn.Linear(self.config["num_class_units"], self.config["num_aux_class"])
+        self.aux = nn.Linear(
+            self.config["num_class_units"], self.config["num_aux_class"]
+        )
 
-    def forward(self, x):
+    def forward(
+        self, x: torch.FloatTensor
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
+        """The forward function to compute a pass through the discriminator model.
+
+        Args:
+            x (torch.FloatTensor): The input EEG data that can be either real or synthetic to be passed through the model.
+        Returns:
+            torch.FloatTensor: Class predictions for the input dataset and binary classification of being real or synthetic.
+        """
         out = self.conv_layers(x)
         out = out.view(out.size(0), -1)
         realfake = self.classifier(out)
@@ -228,9 +241,18 @@ class EEG_CNN_SSVEP(nn.Module):
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_class"])
+        self.classifier = nn.Linear(
+            self.config["num_class_units"], self.config["num_class"]
+        )
 
-    def forward(self, x):
+    def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
+        """The forward function to compute a pass through the subject classification model.
+
+        Args:
+            x (torch.FloatTensor): The raw input EEG data to be passed through the model.
+        Returns:
+            torch.FloatTensor: Frequency class predictions for the input dataset.
+        """
         out = self.conv_layers(x)
         out = out.view(out.size(0), -1)
         classes = self.classifier(out)
