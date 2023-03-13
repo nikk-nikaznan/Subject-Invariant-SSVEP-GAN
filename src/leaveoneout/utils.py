@@ -23,6 +23,24 @@ def load_data() -> np.ndarray:
     return input_data
 
 
+def load_label() -> np.ndarray:
+    # data loading
+    main_path = "sample_data/Real/"
+    eeg_path = glob.glob(main_path + "S0*/")
+
+    input_label = []
+    for f in eeg_path:
+        eeg_files = glob.glob(f + "label/*.npy")
+        eeg_label = [np.load(f) for f in (eeg_files)]
+        eeg_label = np.asarray(np.concatenate(eeg_label))
+        eeg_label = eeg_label.astype(np.int64)
+        input_label.append(eeg_label)
+
+    input_label = np.array(input_label)
+
+    return input_label
+
+
 def get_accuracy(actual, predicted) -> float:
     # actual: cuda longtensor variable
     # predicted: cuda longtensor variable
@@ -31,21 +49,12 @@ def get_accuracy(actual, predicted) -> float:
 
 
 def save_model(
-    epoch,
     subject_predictor,
-    optimizer_Pred,
     test_idx,
-    filepath="pretrain_subject_unseen%i.cpt",
 ) -> None:
     """Save the model and embeddings"""
 
-    state = {
-        "epoch": epoch,
-        "state_dict": subject_predictor.state_dict(),
-        "optimizer": optimizer_Pred.state_dict(),
-    }
-
-    torch.save(state, filepath % (test_idx))
+    torch.save(subject_predictor, f"subject_class{int(test_idx)}.pt")
     print("Model Saved")
 
 

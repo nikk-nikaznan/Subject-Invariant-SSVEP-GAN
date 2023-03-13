@@ -79,12 +79,17 @@ def get_accuracy(actual, predicted):
     return float(actual.eq(predicted).sum()) / actual.size(0)
 
 
-def save_model(epoch, subject_predictor, optimizer_Pred, test_idx, filepath="pretrain_subject.cpt"):
+def save_model(epoch, subject_predictor, optimizer_Pred, test_idx, filepath="model"):
     """Save the model and embeddings"""
 
-    state = {"epoch": epoch, "state_dict": subject_predictor.state_dict(), "optimizer": optimizer_Pred.state_dict()}
+    torch.save(subject_predictor, filepath / f"pretrain_subject_{test_idx}.pt")
+    print(filepath / f"pretrain_subject_{test_idx}.pt")
+    # torch.save(model, model_dir / f"model.pt")
+    # 		print("Saved model to disk")
 
-    torch.save(state, filepath % (test_idx))
+    # state = {"epoch": epoch, "state_dict": subject_predictor.state_dict(), "optimizer": optimizer_Pred.state_dict()}
+
+    # torch.save(state, filepath % (test_idx))
     print("Model Saved")
 
 
