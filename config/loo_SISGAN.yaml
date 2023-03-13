@@ -1,0 +1,70 @@
+num_epochs: 1
+learning_rate: 0.0001
+dropout_level: 0.3
+wdecay: 0.005
+batch_size: 8
+num_subjects: 2
+num_aux_class: 3
+num_class_units: 2816
+nz: 103
+lmbd: 0.3
+
+layers_gen:
+  number: 5
+  in_channels:
+    - 16
+    - 256
+    - 128
+    - 64
+    - 32
+  out_channels:
+    - 256
+    - 128
+    - 64
+    - 32
+    - 2
+  kernel_sizes:
+    - 20
+    - 10
+    - 5
+    - 2
+    - 1
+  strides:
+    - 2
+    - 2
+    - 2
+    - 1 
+    - 1
+  activations:
+    - prelu
+    - prelu
+    - prelu
+    - prelu
+    - sigmoid
+
+layers_dis:
+  number: 5
+  in_channels:
+    - 2
+    - 16
+    - 32
+    - 64
+    - 128
+  out_channels:
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
+  kernel_sizes:
+    - 20
+    - 10
+    - 5
+    - 3
+    - 2 
+  strides:
+    - 4
+    - 2
+    - 2
+    - 2 
+    - 4
