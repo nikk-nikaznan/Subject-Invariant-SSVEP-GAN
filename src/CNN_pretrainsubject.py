@@ -77,7 +77,7 @@ class Pretrain_Subject:
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
         print("Training Accuracy: %2.1f" % ((cumulative_accuracy / len(self.trainloader) * 100)))
-        save_model(epoch, self.subject_predictor, self.test_idx)
+        save_model(self.subject_predictor, self.test_idx)
 
     def perform_loo(self) -> None:
         """Perform the leave one out analysis for each subject in the training dataset"""

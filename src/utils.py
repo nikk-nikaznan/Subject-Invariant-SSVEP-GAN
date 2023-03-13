@@ -54,7 +54,7 @@ def save_model(
 ) -> None:
     """Save the model and embeddings"""
 
-    torch.save(subject_predictor, f"subject_class{int(test_idx)}.pt")
+    torch.save(subject_predictor, f"pretrain_subject_unseen{int(test_idx)}.pt")
     print("Model Saved")
 
 

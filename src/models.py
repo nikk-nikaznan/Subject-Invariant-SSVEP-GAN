@@ -176,7 +176,7 @@ class EEG_CNN_Discriminator(nn.Module):
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_subjects"])
+        self.classifier = nn.Linear(self.config["num_class_units"], 1)
         self.aux = nn.Linear(self.config["num_class_units"], self.config["num_aux_class"])
 
     def forward(self, x):
