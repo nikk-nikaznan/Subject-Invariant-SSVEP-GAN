@@ -73,20 +73,10 @@ class SIS_GAN:
         """Generate random noise and set the last elements to a random selection of one hot labels"""
 
         gen_noise_ = np.random.normal(0, 1, (self.config["batch_size"], self.config["nz"]))
+        gen_noise = torch.from_numpy(gen_noise_)
+        self.z = gen_noise.to(device).float()
         self.gen_label = np.random.randint(0, self.config["num_aux_class"], self.config["batch_size"])
         self.gen_subject = np.random.randint(0, self.config["num_subjects"], self.config["batch_size"])
-        gen_onehot = np.zeros((self.config["batch_size"], self.config["num_aux_class"]))
-        gen_onehot[np.arange(self.config["batch_size"]), self.gen_label] = 1
-        gen_noise_[np.arange(self.config["batch_size"]), : self.config["num_aux_class"]] = gen_onehot[
-            np.arange(self.config["batch_size"])
-        ]
-        gen_noise = torch.from_numpy(gen_noise_)
-        gen_noise.data.copy_(gen_noise.view(self.config["batch_size"], self.config["nz"]))
-        self.z = gen_noise.to(device)
-
-        self.z = self.z.float()
-
-        # return z, gen_label, gen_subject
 
     def _train_model(self) -> None:
         """Train GAN using the provided configuration"""
@@ -194,7 +184,7 @@ class SIS_GAN:
         with torch.no_grad():
             # generate n data per class
             for nclass in range(self.config["num_aux_class"]):
-                for n in range(self.config["n_epochs"]):
+                for n in range(self.config["num_epochs"]):
                     eval_noise_ = np.random.normal(0, 1, (self.config["batch_size"], self.config["nz"]))
                     # Here we are create a vector of size BS with the chosen class
                     eval_label = (np.zeros((self.config["batch_size"],), dtype=int)) + nclass
@@ -210,7 +200,7 @@ class SIS_GAN:
                     fake_data = self.generator(z)
 
                     new_data.append(fake_data.data.cpu().numpy())
-                    new_label.append(new_label)
+                    new_label.append(eval_label)
 
             new_data = np.asarray(new_data)
             new_data = np.concatenate(new_data)
@@ -259,6 +249,7 @@ class SIS_GAN:
             self._load_model()
             self._build_training_objects()
             self._train_model()
+            self._generate_data()
 
 
 if __name__ == "__main__":

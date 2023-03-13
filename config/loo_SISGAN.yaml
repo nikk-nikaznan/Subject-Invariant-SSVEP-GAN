@@ -3,7 +3,7 @@ learning_rate: 0.0001
 dropout_level: 0.3
 wdecay: 0.005
 batch_size: 8
-num_subjects: 3
+num_subjects: 2
 num_aux_class: 3
 num_class_units: 2816
 nz: 103
