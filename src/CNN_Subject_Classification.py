@@ -3,9 +3,9 @@ import random
 
 import numpy as np
 import torch
-import torch.nn as nn
-import yaml
+import yaml  # type: ignore
 from sklearn.model_selection import StratifiedShuffleSplit
+from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from models import EEG_CNN_Subject, weights_init
@@ -30,20 +30,17 @@ class Subject_Class:
 
     def load_config_yaml(self) -> None:
         """Load a YAML file describing the training setup"""
-
-        with open(self.config_file, "r") as f:
+        with open(self.config_file) as f:
             self.config = yaml.safe_load(f)
 
     def _load_model(self) -> None:
         """Load the EEG subject classification model"""
-
         # Build the subject classification model and initalise weights
         self.subject_predictor = EEG_CNN_Subject(self.config).to(device)
         self.subject_predictor.apply(weights_init)
 
     def _build_training_objects(self) -> None:
         """Create the training objects"""
-
         # Loss and Optimizer
         self.ce_loss = nn.CrossEntropyLoss()
         self.optimizer_Pred = torch.optim.Adam(
@@ -54,7 +51,6 @@ class Subject_Class:
 
     def _train_model(self) -> None:
         """Train a model using the provided configuration"""
-
         # loop through the required number of epochs
         for epoch in range(self.config["num_epochs"]):
             print("Epoch:", epoch)
@@ -78,15 +74,12 @@ class Subject_Class:
                 _, predicted = torch.max(outputs, 1)
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
-        print(
-            "Training Accuracy: %2.1f"
-            % ((cumulative_accuracy / len(self.trainloader) * 100))
-        )
+        print("Training Accuracy: %2.1f" % (cumulative_accuracy / len(self.trainloader) * 100))
 
     def _test_model(self) -> None:
         """Train a model using the provided configuration"""
         self.subject_predictor.eval()
-        test_cumulative_accuracy = 0
+        test_cumulative_accuracy = 0.0
         for i, data in enumerate(self.testloader, 0):
             # format the data from the dataloader
             test_inputs, test_labels = data
@@ -99,14 +92,10 @@ class Subject_Class:
             test_acc = get_accuracy(test_labels, test_predicted)
             test_cumulative_accuracy += test_acc
 
-        print(
-            "Test Accuracy: %2.1f"
-            % ((test_cumulative_accuracy / len(self.testloader) * 100))
-        )
+        print("Test Accuracy: %2.1f" % (test_cumulative_accuracy / len(self.testloader) * 100))
 
     def perform_kfold(self) -> None:
         """Preparing data for the training"""
-
         train_subject = []
         for num_s in range(self.input_data.shape[0]):
             train_subject.append(np.zeros(self.input_data.shape[1]) + num_s)

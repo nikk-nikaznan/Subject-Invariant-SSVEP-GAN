@@ -32,8 +32,7 @@ def load_label() -> np.ndarray:
     for f in eeg_path:
         eeg_files = glob.glob(f + "label/*.npy")
         eeg_label = [np.load(f) for f in (eeg_files)]
-        eeg_label = np.asarray(np.concatenate(eeg_label))
-        eeg_label = eeg_label.astype(np.int64)
+        eeg_label = np.concatenate(eeg_label).astype(np.int64)
         input_label.append(eeg_label)
 
     input_label = np.array(input_label)
@@ -53,7 +52,6 @@ def save_model(
     test_idx,
 ) -> None:
     """Save the model and embeddings"""
-
     torch.save(subject_predictor, f"pretrain_subject_unseen{int(test_idx)}.pt")
     print("Model Saved")
 
@@ -72,17 +70,17 @@ def data_process(input_data):
 
     # Design notch filter
     b, a = signal.iirnotch(w0, Q)
-    for i in range(0, len(input_data)):
+    for i in range(len(input_data)):
         # apply along the zeroeth dimension
         input_data[i, :, :] = signal.filtfilt(b, a, input_data[i, :, :], axis=0)
 
     b, a = signal.butter(4, 9.0 / (fs / 2.0), "highpass")
-    for i in range(0, len(input_data)):
+    for i in range(len(input_data)):
         # apply along the zeroeth dimension
         input_data[i, :, :] = signal.filtfilt(b, a, input_data[i, :, :], axis=0)
 
     b, a = signal.butter(4, 60 / (fs / 2.0), "lowpass")
-    for i in range(0, len(input_data)):
+    for i in range(len(input_data)):
         # apply along the zeroeth dimension
         input_data[i, :, :] = signal.filtfilt(b, a, input_data[i, :, :], axis=0)
 

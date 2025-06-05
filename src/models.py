@@ -1,8 +1,8 @@
 from typing import Tuple
 
 import torch
-import torch.nn as nn
 from class_resolver import ClassResolver
+from torch import nn
 
 activation_resolver = ClassResolver(
     [nn.PReLU, nn.Sigmoid],
@@ -54,23 +54,23 @@ class EEG_CNN_Subject(nn.Module):
                     nn.BatchNorm1d(num_features=out_features),
                     nn.PReLU(),
                     nn.Dropout(self.config["dropout_level"]),
-                )
+                ),
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(
-            self.config["num_class_units"], self.config["num_subjects"]
-        )
+        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_subjects"])
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        """The forward function to compute a pass through the subject classification model.
+        """
+        The forward function to compute a pass through the subject classification model.
 
         Args:
             x (torch.FloatTensor): The raw input EEG data to be passed through the model.
+
         Returns:
             torch.FloatTensor: Subject class predictions for the input dataset.
-        """
 
+        """
         out = self.conv_layers(x)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
@@ -120,17 +120,20 @@ class EEG_CNN_Generator(nn.Module):
                         bias=False,
                     ),
                     activation_resolver.make(activation),
-                )
+                ),
             )
         self.convTranspose_layers = nn.Sequential(*layers)
 
     def forward(self, z: torch.FloatTensor) -> torch.FloatTensor:
-        """The forward function to compute a pass through the generator model.
+        """
+        The forward function to compute a pass through the generator model.
 
         Args:
             z (torch.FloatTensor): The random noise to be passed through the model.
+
         Returns:
             torch.FloatTensor: Generated data.
+
         """
         out = self.dense(z)
         out = out.view(out.size(0), 16, 176)
@@ -174,24 +177,23 @@ class EEG_CNN_Discriminator(nn.Module):
                     nn.BatchNorm1d(num_features=out_features),
                     nn.PReLU(),
                     nn.Dropout(self.config["dropout_level"]),
-                )
+                ),
             )
         self.conv_layers = nn.Sequential(*layers)
 
         self.classifier = nn.Linear(self.config["num_class_units"], 1)
-        self.aux = nn.Linear(
-            self.config["num_class_units"], self.config["num_aux_class"]
-        )
+        self.aux = nn.Linear(self.config["num_class_units"], self.config["num_aux_class"])
 
-    def forward(
-        self, x: torch.FloatTensor
-    ) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
-        """The forward function to compute a pass through the discriminator model.
+    def forward(self, x: torch.FloatTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
+        """
+        The forward function to compute a pass through the discriminator model.
 
         Args:
             x (torch.FloatTensor): The input EEG data that can be either real or synthetic to be passed through the model.
+
         Returns:
             torch.FloatTensor: Class predictions for the input dataset and binary classification of being real or synthetic.
+
         """
         out = self.conv_layers(x)
         out = out.view(out.size(0), -1)
@@ -237,21 +239,22 @@ class EEG_CNN_SSVEP(nn.Module):
                     nn.BatchNorm1d(num_features=out_features),
                     nn.PReLU(),
                     nn.Dropout(self.config["dropout_level"]),
-                )
+                ),
             )
         self.conv_layers = nn.Sequential(*layers)
 
-        self.classifier = nn.Linear(
-            self.config["num_class_units"], self.config["num_class"]
-        )
+        self.classifier = nn.Linear(self.config["num_class_units"], self.config["num_class"])
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        """The forward function to compute a pass through the subject classification model.
+        """
+        The forward function to compute a pass through the subject classification model.
 
         Args:
             x (torch.FloatTensor): The raw input EEG data to be passed through the model.
+
         Returns:
             torch.FloatTensor: Frequency class predictions for the input dataset.
+
         """
         out = self.conv_layers(x)
         out = out.view(out.size(0), -1)

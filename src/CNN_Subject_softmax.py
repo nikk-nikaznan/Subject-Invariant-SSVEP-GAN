@@ -1,8 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-
 from torch.utils.data import DataLoader, TensorDataset
-import matplotlib.pyplot as plt
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -14,15 +13,11 @@ class Softmax_Class:
 
     def _load_pretrain_model(self) -> None:
         """Load the pretrain subject classification model"""
-
         # Load the pretrain subject predictor
-        self.subject_predictor = torch.load(
-            "pretrain_subject_unseen0.pt", map_location=torch.device("cuda:0")
-        )
+        self.subject_predictor = torch.load("pretrain_subject_unseen0.pt", map_location=torch.device("cuda:0"))
 
     def _test_model(self) -> None:
         """Test the model on test dataset"""
-
         self.mean_outputs = []
         self.subject_predictor.eval()
         with torch.no_grad():
@@ -55,7 +50,6 @@ class Softmax_Class:
 
     def perform_softmax(self) -> None:
         """Calculate the softmax probability on generated data based on the pretrained subject weight"""
-
         fake_data = torch.from_numpy(self.input_data)
         fake_label = torch.from_numpy(self.input_label)
         self.testloader = DataLoader(
