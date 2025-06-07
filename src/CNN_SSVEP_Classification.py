@@ -27,6 +27,7 @@ class SSVEP_Class:
         self.input_data = load_data()
         self.input_label = load_label()
         self.load_config_yaml()
+        self.rng = np.random.default_rng(42)  # For reproducibility
 
     def load_config_yaml(self) -> None:
         """Load a YAML file describing the training setup"""
