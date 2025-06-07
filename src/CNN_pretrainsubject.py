@@ -8,7 +8,7 @@ from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from models import EEG_CNN_Subject, weights_init
+from models import EEGCNNSubject, weights_init
 from utils import get_accuracy, load_data, save_model
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -35,7 +35,7 @@ class Pretrain_Subject:
     def _load_model(self) -> None:
         """Load the EEG subject classification model"""
         # Build the subject classification model and initalise weights
-        self.subject_predictor = EEG_CNN_Subject(self.config).to(device)
+        self.subject_predictor = EEGCNNSubject(self.config).to(device)
         self.subject_predictor.apply(weights_init)
 
     def _build_training_objects(self) -> None:
