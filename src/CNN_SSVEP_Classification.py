@@ -1,47 +1,59 @@
 import argparse
+import logging
 import random
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
-import yaml  # type: ignore
+import yaml  # type: ignore[import-untyped]
 from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from models import EEG_CNN_SSVEP, weights_init
+from models import EEGCNNSSVEP, weights_init
 from utils import get_accuracy, load_data, load_label
 
+logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Setting seeds for reproducibility
 seed_n = 42
 random.seed(seed_n)
-np.random.seed(seed_n)
+np.random.generator(seed_n)
 torch.manual_seed(seed_n)
 torch.cuda.manual_seed(seed_n)
 
 
-class SSVEP_Class:
+class SSVEPClass:
+    """Class for training SSVEP classification model on EEG data."""
+
     def __init__(self, config_file: str) -> None:
+        """
+        Initialize the SSVEP class with configuration and data.
+
+        Args:
+            config_file (str): Path to the YAML configuration file.
+
+        """
         self.config_file = config_file
         self.input_data = load_data()
         self.input_label = load_label()
         self.load_config_yaml()
-        self.rng = np.random.default_rng(42)  # For reproducibility
 
     def load_config_yaml(self) -> None:
-        """Load a YAML file describing the training setup"""
-        with open(self.config_file) as f:
-            self.config = yaml.safe_load(f)
+        """Load a YAML file describing the training setup."""
+        with Path(self.config_file).open() as f:
+            self.config: dict[str, Any] = yaml.safe_load(f)
 
     def _load_model(self) -> None:
-        """Load the EEG subject classification model"""
+        """Load the EEG subject classification model."""
         # Build the subject classification model and initalise weights
-        self.subject_predictor = EEG_CNN_SSVEP(self.config).to(device)
+        self.subject_predictor = EEGCNNSSVEP(self.config).to(device)
         self.subject_predictor.apply(weights_init)
 
     def _build_training_objects(self) -> None:
-        """Create the training objects"""
+        """Create the training objects."""
         # Loss and Optimizer
         self.ce_loss = nn.CrossEntropyLoss()
         self.optimizer_Pred = torch.optim.Adam(
@@ -51,14 +63,14 @@ class SSVEP_Class:
         )
 
     def _train_model(self) -> None:
-        """Train a model using the provided configuration"""
+        """Train a model using the provided configuration."""
         # loop through the required number of epochs
         for epoch in range(self.config["num_epochs"]):
-            print("Epoch:", epoch)
+            logger.info("Epoch : %d", epoch)
             cumulative_accuracy = 0.0
 
             # loop over all of the batches
-            for i, data in enumerate(self.trainloader, 0):
+            for _, data in enumerate(self.trainloader, 0):
                 # format the data from the dataloader
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
@@ -75,24 +87,26 @@ class SSVEP_Class:
                 _, predicted = torch.max(outputs, 1)
 
                 cumulative_accuracy += get_accuracy(labels, predicted)
-        print("Training Accuracy: %2.1f" % (cumulative_accuracy / len(self.trainloader) * 100))
+        logger.info("Training accuracy: %2.1f", cumulative_accuracy / len(self.trainloader) * 100)
 
     def perform_loo(self) -> None:
-        """Perform the leave one out analysis for each subject in the training dataset"""
+        """Perform the leave one out analysis for each subject in the training dataset."""
         loo = LeaveOneOut()
 
-        for self.train_idx, self.test_idx in loo.split(self.input_data):
-            print(self.train_idx, self.test_idx)
+        for train_idx, test_idx in loo.split(self.input_data):
+            logger.info("Train indices: %s, Test index: %s", train_idx, test_idx)
+            self.train_idx = train_idx
+            self.test_idx = test_idx
 
             datainput = self.input_data[self.train_idx]
             labelinput = self.input_label[self.train_idx]
 
-            EEGdata = np.concatenate(datainput)
-            EEGlabel = np.concatenate(labelinput)
+            eeg_data = np.concatenate(datainput)
+            eeg_label = np.concatenate(labelinput)
 
             # convert NumPy Array to Torch Tensor
-            train_input = torch.from_numpy(EEGdata)
-            train_label = torch.from_numpy(EEGlabel)
+            train_input = torch.from_numpy(eeg_data)
+            train_label = torch.from_numpy(eeg_label)
 
             # create the data loader for the training set
             self.trainloader = DataLoader(
@@ -117,5 +131,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    trainer = SSVEP_Class(config_file=args.config_file)
+    trainer = SSVEPClass(config_file=args.config_file)
     trainer.perform_loo()

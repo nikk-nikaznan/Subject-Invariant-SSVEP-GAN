@@ -3,50 +3,50 @@ name = "subject_invariant_ssvep_gan"
 version = "0.1.0"
 description = "Generating synthetic SSVEP data using GANs without subject-specific features"
 authors = [
-    { name="Nik Khadijah Nik Aznan", email="nik.k.nikaznan@outlook.com" }
+  {name = "Nik Khadijah Nik Aznan", email = "nik.k.nikaznan@outlook.com"}
 ]
 dependencies = [
-    "black==23.1.0",
-    "class_resolver==0.4.0",
-    "click==8.1.3",
-    "contourpy==1.0.7",
-    "cycler==0.11.0",
-    "flake8==6.0.0",
-    "fonttools==4.39.0",
-    "joblib==1.2.0",
-    "kiwisolver==1.4.4",
-    "matplotlib==3.7.1",
-    "mccabe==0.7.0",
-    "mypy==1.1.1",
-    "mypy-extensions==1.0.0",
-    "numpy==1.24.2",
-    "packaging==23.0",
-    "pathspec==0.11.0",
-    "Pillow==9.4.0",
-    "platformdirs==3.1.1",
-    "pycodestyle==2.10.0",
-    "pyflakes==3.0.1",
-    "pyparsing==3.0.9",
-    "python-dateutil==2.8.2",
-    "PyYAML==6.0",
-    "scikit-learn==1.2.2",
-    "scipy==1.10.1",
-    "six==1.16.0",
-    "threadpoolctl==3.1.0",
-    "tomli==2.0.1",
-    "torch>=2.1.0,<3.0.0",
-    "typing_extensions==4.5.0"
+  "black==23.1.0",
+  "class_resolver==0.4.0",
+  "click==8.1.3",
+  "contourpy==1.0.7",
+  "cycler==0.11.0",
+  "flake8==6.0.0",
+  "fonttools==4.39.0",
+  "joblib==1.2.0",
+  "kiwisolver==1.4.4",
+  "matplotlib==3.7.1",
+  "mccabe==0.7.0",
+  "mypy==1.1.1",
+  "mypy-extensions==1.0.0",
+  "numpy==1.24.2",
+  "packaging==23.0",
+  "pathspec==0.11.0",
+  "Pillow==9.4.0",
+  "platformdirs==3.1.1",
+  "pycodestyle==2.10.0",
+  "pyflakes==3.0.1",
+  "pyparsing==3.0.9",
+  "python-dateutil==2.8.2",
+  "PyYAML==6.0",
+  "scikit-learn==1.2.2",
+  "scipy==1.10.1",
+  "six==1.16.0",
+  "threadpoolctl==3.1.0",
+  "tomli==2.0.1",
+  "torch>=2.1.0,<3.0.0",
+  "typing_extensions==4.5.0"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit>=3.0.0",
-    "mypy==1.1.1",
-    "ruff==0.1.11", 
-    "toml-sort>=0.24.2",
-    "black==23.1.0",
-    "types-PyYAML"
-    ]
+  "pre-commit>=3.0.0",
+  "mypy==1.1.1",
+  "ruff==0.1.11",
+  "toml-sort>=0.24.2",
+  "black==23.1.0",
+  "types-PyYAML"
+]
 
 [tool.ruff]
 line-length = 120
