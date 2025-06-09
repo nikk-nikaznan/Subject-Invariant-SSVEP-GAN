@@ -10,7 +10,7 @@ from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from models import EEG_CNN_Discriminator, EEG_CNN_Generator, weights_init
+from models import EEGCNNDiscriminator, EEGCNNGenerator, weights_init
 from utils import load_data, load_label
 
 logger = logging.getLogger(__name__)
@@ -49,9 +49,9 @@ class SISGAN:
 
     def _load_model(self) -> None:
         """Load and initialize the GAN generator and discriminator models."""
-        self.generator: torch.nn.Module = EEG_CNN_Generator(self.config).to(device)
+        self.generator: torch.nn.Module = EEGCNNGenerator(self.config).to(device)
         self.generator.apply(weights_init)
-        self.discriminator: torch.nn.Module = EEG_CNN_Discriminator(self.config).to(device)
+        self.discriminator: torch.nn.Module = EEGCNNDiscriminator(self.config).to(device)
         self.discriminator.apply(weights_init)
 
     def _build_training_objects(self) -> None:

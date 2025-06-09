@@ -20,7 +20,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # Setting seeds for reproducibility
 seed_n = 42
 random.seed(seed_n)
-np.random.generator(seed_n)
+np.random.default_rng(seed_n)
 torch.manual_seed(seed_n)
 torch.cuda.manual_seed(seed_n)
 
