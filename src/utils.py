@@ -21,7 +21,7 @@ def load_data() -> np.ndarray:
 
     input_data = []
     for f in eeg_path:
-        eeg_files = list((f / "data").glob("*.npy"))
+        eeg_files = sorted((f / "data").glob("*.npy"))
         eeg_data = [np.load(str(file)) for file in eeg_files]
         eeg_data = np.array(np.concatenate(eeg_data))
         eeg_data = data_process(eeg_data)
