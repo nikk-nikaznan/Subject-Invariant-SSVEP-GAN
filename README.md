@@ -18,10 +18,10 @@ The code is structured as follows:
 
 ## Dependencies and Requirements
 
-The code has been designed to support python 3.7+ only. The dependencies for the project can be installed via pip using the requirements.txt as follows:
+The code has been designed to support python 3.7+ only.
 
 ```shell
-pip install .
+pip install -e .
 ```
 
 ## How to Use
