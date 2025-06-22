@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sis_gan"
+version = "0.1.0"
+description = "Generating synthetic SSVEP data using GANs without subject-specific features"
+authors = [
+  {name = "Nik Khadijah Nik Aznan", email = "nik.k.nikaznan@outlook.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "class-resolver>=0.6.0",
+  "matplotlib>=3.10.3",
+  "numpy>=2.3.1",
+  "scikit-learn>=1.7.0",
+  "scipy>=1.16.0",
+  "torch>=2.7.1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit>=4.2.0"
+]
+
+[tool.ruff]
+line-length = 120
+fix = true
+force-exclude = true
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "preserve"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D203", "D212", "D100"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["sis_gan*"]
