@@ -11,8 +11,8 @@ from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from models import EEGCNNSSVEP, weights_init
-from utils import get_accuracy, load_data, load_label
+from sis_gan.models import EEGCNNSubject, weights_init
+from sis_gan.utils import get_accuracy, load_data, save_model
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -25,20 +25,19 @@ torch.manual_seed(seed_n)
 torch.cuda.manual_seed(seed_n)
 
 
-class SSVEPClass:
-    """Class for training SSVEP classification model on EEG data."""
+class PretrainSubject:
+    """Class for pretraining a subject classification model on EEG data using leave-one-out cross-validation."""
 
     def __init__(self, config_file: str) -> None:
         """
-        Initialize the SSVEP class with configuration and data.
+        Initialize the Pretrain_Subject class with configuration and data.
 
         Args:
             config_file (str): Path to the YAML configuration file.
 
         """
-        self.config_file = config_file
-        self.input_data = load_data()
-        self.input_label = load_label()
+        self.config_file: str = config_file
+        self.input_data: np.ndarray = load_data()
         self.load_config_yaml()
 
     def load_config_yaml(self) -> None:
@@ -47,9 +46,8 @@ class SSVEPClass:
             self.config: dict[str, Any] = yaml.safe_load(f)
 
     def _load_model(self) -> None:
-        """Load the EEG subject classification model."""
-        # Build the subject classification model and initalise weights
-        self.subject_predictor = EEGCNNSSVEP(self.config).to(device)
+        """Load the EEG subject classification model and initialize weights."""
+        self.subject_predictor: nn.Module = EEGCNNSubject(self.config).to(device)
         self.subject_predictor.apply(weights_init)
 
     def _build_training_objects(self) -> None:
@@ -85,9 +83,9 @@ class SSVEPClass:
 
                 # calculate the accuracy over the training batch
                 _, predicted = torch.max(outputs, 1)
-
                 cumulative_accuracy += get_accuracy(labels, predicted)
         logger.info("Training accuracy: %2.1f", cumulative_accuracy / len(self.trainloader) * 100)
+        save_model(self.subject_predictor, self.test_idx)
 
     def perform_loo(self) -> None:
         """Perform the leave one out analysis for each subject in the training dataset."""
@@ -99,17 +97,15 @@ class SSVEPClass:
             self.test_idx = test_idx
 
             datainput = self.input_data[self.train_idx]
-            labelinput = self.input_label[self.train_idx]
-
+            train_subject = [np.zeros(datainput.shape[1]) + num_s for num_s in range(datainput.shape[0])]
+            train_subject = np.array(train_subject).astype(np.int64)
+            eeg_subject = np.concatenate(train_subject)
             eeg_data = np.concatenate(datainput)
-            eeg_label = np.concatenate(labelinput)
 
-            # convert NumPy Array to Torch Tensor
             train_input = torch.from_numpy(eeg_data)
-            train_label = torch.from_numpy(eeg_label)
+            train_label = torch.from_numpy(eeg_subject)
 
-            # create the data loader for the training set
-            self.trainloader = DataLoader(
+            self.trainloader: DataLoader = DataLoader(
                 dataset=TensorDataset(train_input, train_label),
                 batch_size=self.config["batch_size"],
                 shuffle=True,
@@ -126,10 +122,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_file",
         type=str,
-        default="config/loo_SSVEP_class.yaml",
+        default="config/loo_pretrain_subject.yaml",
         help="location of YAML config to control training",
     )
     args = parser.parse_args()
 
-    trainer = SSVEPClass(config_file=args.config_file)
+    trainer = PretrainSubject(config_file=args.config_file)
     trainer.perform_loo()

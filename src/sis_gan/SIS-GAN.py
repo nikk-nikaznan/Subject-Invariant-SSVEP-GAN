@@ -10,8 +10,8 @@ from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from models import EEGCNNDiscriminator, EEGCNNGenerator, weights_init
-from utils import load_data, load_label
+from sis_gan.models import EEGCNNDiscriminator, EEGCNNGenerator, weights_init
+from sis_gan.utils import load_data, load_label
 
 logger = logging.getLogger(__name__)
 
