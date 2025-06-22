@@ -70,6 +70,7 @@ class EEGCNNSubject(nn.Module):
             self.config["layers"]["out_channels"],
             self.config["layers"]["kernel_sizes"],
             self.config["layers"]["strides"],
+            strict=False,
         ):
             layers.extend(
                 (
@@ -140,6 +141,7 @@ class EEGCNNGenerator(nn.Module):
             self.config["layers_gen"]["kernel_sizes"],
             self.config["layers_gen"]["strides"],
             self.config["layers_gen"]["activations"],
+            strict=False,
         ):
             layers.extend(
                 (
@@ -203,6 +205,7 @@ class EEGCNNDiscriminator(nn.Module):
             self.config["layers_dis"]["out_channels"],
             self.config["layers_dis"]["kernel_sizes"],
             self.config["layers_dis"]["strides"],
+            strict=False,
         ):
             layers.extend(
                 (
@@ -273,6 +276,7 @@ class EEGCNNSSVEP(nn.Module):
             self.config["layers"]["out_channels"],
             self.config["layers"]["kernel_sizes"],
             self.config["layers"]["strides"],
+            strict=False,
         ):
             layers.extend(
                 (
