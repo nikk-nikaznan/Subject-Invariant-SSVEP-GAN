@@ -12,7 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from sis_gan.models import EEGCNNSSVEP, weights_init
-from sis_gan.utils import get_accuracy, load_data, load_label
+from sis_gan.utils import get_accuracy, load_data, load_label, load_config_yaml
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -36,15 +36,10 @@ class SSVEPClass:
             config_file (str): Path to the YAML configuration file.
 
         """
-        self.config_file = config_file
         self.input_data = load_data()
         self.input_label = load_label()
-        self.load_config_yaml()
 
-    def load_config_yaml(self) -> None:
-        """Load a YAML file describing the training setup."""
-        with Path(self.config_file).open() as f:
-            self.config: dict[str, Any] = yaml.safe_load(f)
+        self.config = load_config_yaml(config_file)
 
     def _load_model(self) -> None:
         """Load the EEG subject classification model."""
