@@ -36,7 +36,7 @@ quote-style = "preserve"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D203", "D212", "D100"]
+ignore = ["D203", "D212", "D100", "D104"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
