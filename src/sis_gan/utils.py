@@ -1,12 +1,11 @@
 import logging
 from pathlib import Path
-
 from typing import Any
 
 import numpy as np
 import torch
-from scipy import signal
 import yaml  # type: ignore[import-untyped]
+from scipy import signal
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +13,7 @@ logger = logging.getLogger(__name__)
 def load_config_yaml(config_file: str) -> dict[str, Any]:
     """Load a YAML file describing the training setup."""
     with Path(config_file).open() as f:
-        config = yaml.safe_load(f)
-
-    return config
+        return yaml.safe_load(f)
 
 
 def load_data() -> np.ndarray:

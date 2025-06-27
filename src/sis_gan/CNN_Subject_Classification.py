@@ -1,18 +1,15 @@
 import argparse
 import logging
 import random
-from pathlib import Path
-from typing import Any
 
 import numpy as np
 import torch
-import yaml  # type: ignore[import-untyped]
 from sklearn.model_selection import StratifiedShuffleSplit
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from sis_gan.models import EEGCNNSubject, weights_init
-from sis_gan.utils import get_accuracy, load_data, load_label, save_model, load_config_yaml
+from sis_gan.utils import get_accuracy, load_config_yaml, load_data, load_label, save_model
 
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
