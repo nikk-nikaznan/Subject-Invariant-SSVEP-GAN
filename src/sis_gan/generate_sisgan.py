@@ -43,12 +43,12 @@ class SISGAN:
 
     def _load_pretrain_model(self) -> None:
         """Load the pretrain subject classification model."""
-        self.subject_predictor  = torch.load(
+        self.subject_predictor = torch.load(
             f"pretrain_subject_unseen{self.test_idx}.pt",
             map_location=device,
             weights_only=False,
         )
-        
+
     def _load_model(self) -> None:
         """Load and initialize the GAN generator and discriminator models."""
         self.generator: torch.nn.Module = EEGCNNGenerator(self.config).to(device)
@@ -234,7 +234,6 @@ if __name__ == "__main__":
         help="location of YAML config to control training",
     )
     args = parser.parse_args()
-    print(args.config_file)
 
     trainer = SISGAN(config_file=args.config_file)
     trainer.perform_loo()

@@ -18,10 +18,16 @@ The code is structured as follows:
 
 ## Dependencies and Requirements
 
-The code has been designed to support python 3.7+ only.
+1. Create a new uv environment with Python 3.12:
 
-```shell
-pip install -e .
+```bash
+uv venv --python 3.12
+```
+
+2. Install the required dependencies defined in pyproject.toml:
+
+```bash
+uv pip install -e .
 ```
 
 ## How to Use
@@ -31,7 +37,7 @@ pip install -e .
 - Create the pre-train subject weight. This can be done by running:
 
 ```bash
-uv run python -m sis_gan.cnn_pretrainsubject --config_file config/loo_pretrain_subject.yaml
+uv run python -m sis_gan.cnn_pretrainsubject
 ```
 
 - Then, train sis_gan model by using the pretrain subject weight as a frozen network.
