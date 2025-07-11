@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sis_gan.models import EEGCNNSSVEP, weights_init
 from sis_gan.utils import get_accuracy, load_config_yaml, load_data, load_label
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -45,8 +46,7 @@ class SSVEPClass:
         self.subject_predictor.apply(weights_init)
 
     def _build_training_objects(self) -> None:
-        """Create the training objects."""
-        # Loss and Optimizer
+        """Create the training objects - Loss and Optimizer."""
         self.ce_loss = nn.CrossEntropyLoss()
         self.optimizer_Pred = torch.optim.Adam(
             self.subject_predictor.parameters(),
