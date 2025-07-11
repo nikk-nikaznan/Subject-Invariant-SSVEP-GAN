@@ -11,9 +11,9 @@ The code is structured as follows:
 
 - `cnn_subject_classification.py` contains code for subject-biometric classification network;
 - `cnn_subject_softmax.py` contains code for Softmax probability values taken for the generated data;
-- `sis_gan.py` Our proposed SIS-GAN based model for generating subject invariant SSVEP-based EEG data;
-- `cnn_pretrainsubject.py` contains code for pre-training subject-biometric classification network;
-- `cnn_ssvep_Classification.py` our SSVEP classification network;
+- `generate_sisgan.py` Our proposed SIS-GAN based model for generating subject invariant SSVEP-based EEG data;
+- `pretrain_subject_class.py` contains code for pre-training subject-biometric classification network;
+- `ssvep_Classification.py` our SSVEP classification network;
 - `models.py` contains all the related models;
 
 ## Dependencies and Requirements
