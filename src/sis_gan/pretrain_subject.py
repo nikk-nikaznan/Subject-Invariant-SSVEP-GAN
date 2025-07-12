@@ -9,15 +9,9 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from .models import EEGCNNSubject, weights_init
-<<<<<<<< HEAD:src/sis_gan/pretrain_subject_class.py
-from .utils import get_accuracy, load_config_yaml, load_data, save_model
-
-logging.basicConfig(level=logging.INFO)
-========
 from .utils import get_accuracy, load_config_yaml, load_data, save_model, setup_logging_from_config
 
 setup_logging_from_config()
->>>>>>>> main:src/sis_gan/pretrain_subject.py
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
