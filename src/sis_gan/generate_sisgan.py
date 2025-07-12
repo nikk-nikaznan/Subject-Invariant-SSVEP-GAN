@@ -202,7 +202,7 @@ class SISGAN:
         """Perform the leave-one-out analysis for each subject in the training dataset."""
         loo = LeaveOneOut()
         for train_idx, test_idx in loo.split(self.input_data):
-            logger.info("Training on subject %d, testing on subject %d", train_idx, test_idx)
+            logger.info("Training on subjects %s, testing on subject %s", train_idx, test_idx)
             self.train_idx = train_idx
             self.test_idx = test_idx[0]
 

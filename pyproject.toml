@@ -18,7 +18,7 @@ dependencies = [
   "pyyaml>=6.0.2",
   "scikit-learn>=1.7.0",
   "scipy>=1.16.0",
-  "torch>=2.7.1",
+  "torch>=2.7.1"
 ]
 
 [project.optional-dependencies]
