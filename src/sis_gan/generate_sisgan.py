@@ -11,9 +11,9 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from sis_gan.models import EEGCNNDiscriminator, EEGCNNGenerator, weights_init
-from sis_gan.utils import load_data, load_label
+from sis_gan.utils import load_data, load_label, setup_logging_from_config
 
-logging.basicConfig(level=logging.INFO)
+setup_logging_from_config()
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -202,7 +202,7 @@ class SISGAN:
         """Perform the leave-one-out analysis for each subject in the training dataset."""
         loo = LeaveOneOut()
         for train_idx, test_idx in loo.split(self.input_data):
-            logger.info("Training on subject %d, testing on subject %d", train_idx, test_idx)
+            logger.info("Training on subjects %s, testing on subject %s", train_idx, test_idx)
             self.train_idx = train_idx
             self.test_idx = test_idx[0]
 
