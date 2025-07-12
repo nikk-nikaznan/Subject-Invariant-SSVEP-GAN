@@ -9,10 +9,11 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from .models import EEGCNNSubject, weights_init
-from .utils import get_accuracy, load_config_yaml, load_data, save_model
+from .utils import get_accuracy, load_config_yaml, load_data, save_model, setup_logging_from_config
 
-logging.basicConfig(level=logging.INFO)
+setup_logging_from_config()
 logger = logging.getLogger(__name__)
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Setting seeds for reproducibility
