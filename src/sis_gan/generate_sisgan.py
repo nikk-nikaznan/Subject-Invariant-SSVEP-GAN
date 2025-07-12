@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sis_gan.models import EEGCNNDiscriminator, EEGCNNGenerator, weights_init
 from sis_gan.utils import load_data, load_label
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -42,9 +43,10 @@ class SISGAN:
 
     def _load_pretrain_model(self) -> None:
         """Load the pretrain subject classification model."""
-        self.subject_predictor: torch.nn.Module = torch.load(
+        self.subject_predictor = torch.load(
             f"pretrain_subject_unseen{self.test_idx}.pt",
-            map_location=torch.device("cpu"),
+            map_location=device,
+            weights_only=False,
         )
 
     def _load_model(self) -> None:
@@ -202,7 +204,7 @@ class SISGAN:
         for train_idx, test_idx in loo.split(self.input_data):
             logger.info("Training on subject %d, testing on subject %d", train_idx, test_idx)
             self.train_idx = train_idx
-            self.test_idx = test_idx
+            self.test_idx = test_idx[0]
 
             datainput = self.input_data[self.train_idx]
             labelinput = self.input_label[self.train_idx]

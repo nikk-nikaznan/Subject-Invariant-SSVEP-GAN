@@ -1,19 +1,17 @@
 import argparse
 import logging
 import random
-from pathlib import Path
-from typing import Any
 
 import numpy as np
 import torch
-import yaml  # type: ignore[import-untyped]
 from sklearn.model_selection import LeaveOneOut
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from sis_gan.models import EEGCNNSubject, weights_init
-from sis_gan.utils import get_accuracy, load_data, save_model
+from .models import EEGCNNSubject, weights_init
+from .utils import get_accuracy, load_config_yaml, load_data, save_model
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -36,14 +34,8 @@ class PretrainSubject:
             config_file (str): Path to the YAML configuration file.
 
         """
-        self.config_file: str = config_file
         self.input_data: np.ndarray = load_data()
-        self.load_config_yaml()
-
-    def load_config_yaml(self) -> None:
-        """Load a YAML file describing the training setup."""
-        with Path(self.config_file).open() as f:
-            self.config: dict[str, Any] = yaml.safe_load(f)
+        self.config = load_config_yaml(config_file)
 
     def _load_model(self) -> None:
         """Load the EEG subject classification model and initialize weights."""

@@ -1,11 +1,19 @@
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
+import yaml  # type: ignore[import-untyped]
 from scipy import signal
 
 logger = logging.getLogger(__name__)
+
+
+def load_config_yaml(config_file: str) -> dict[str, Any]:
+    """Load a YAML file describing the training setup."""
+    with Path(config_file).open() as f:
+        return yaml.safe_load(f)
 
 
 def load_data() -> np.ndarray:
