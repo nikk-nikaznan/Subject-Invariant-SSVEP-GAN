@@ -37,7 +37,7 @@ uv pip install -e .
 - Create the pre-train subject weight. This can be done by running:
 
 ```bash
-uv run python -m sis_gan.cnn_pretrainsubject
+uv run python -m sis_gan.pretrain_subject
 ```
 
 - Then, train sis_gan model by using the pretrain subject weight as a frozen network.
@@ -49,7 +49,7 @@ uv run python -m sis_gan.generate_sisgan
 - Lastly, evaluate the performance of the generated synthetic data by running:
 
 ```bash
-uv run python -m sis_gan.cnn_ssvep_classification
+uv run python -m sis_gan.ssvep_classification
 ```
 
 Model configurations are controlled by using yaml files that can be found in the config directory. This can be changed to customise the model accordingly.
