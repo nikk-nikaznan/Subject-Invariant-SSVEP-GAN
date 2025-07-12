@@ -9,9 +9,9 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from sis_gan.models import EEGCNNSubject, weights_init
-from sis_gan.utils import get_accuracy, load_config_yaml, load_data, load_label, save_model
+from sis_gan.utils import get_accuracy, load_config_yaml, load_data, load_label, save_model, setup_logging_from_config
 
-logging.basicConfig(level=logging.INFO)
+setup_logging_from_config()
 logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

@@ -2,6 +2,7 @@
 
 [![Arxiv](https://img.shields.io/badge/ArXiv-2112.06567-orange.svg)](https://arxiv.org/abs/2007.11544)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/pykeen)](https://img.shields.io/pypi/pyversions/pykeen)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 Code to accompany our International Conference on Pattern Recognition (ICPR) paper entitled -
 [Leveraging Synthetic Subject Invariant EEG Signalsfor Zero Calibration BCI](https://arxiv.org/pdf/2007.11544.pdf).
@@ -36,7 +37,7 @@ uv pip install -e .
 - Create the pre-train subject weight. This can be done by running:
 
 ```bash
-uv run python -m sis_gan.cnn_pretrainsubject
+uv run python -m sis_gan.pretrain_subject
 ```
 
 - Then, train sis_gan model by using the pretrain subject weight as a frozen network.
@@ -48,10 +49,18 @@ uv run python -m sis_gan.generate_sisgan
 - Lastly, evaluate the performance of the generated synthetic data by running:
 
 ```bash
-uv run python -m sis_gan.cnn_ssvep_classification
+uv run python -m sis_gan.ssvep_classification
 ```
 
 Model configurations are controlled by using yaml files that can be found in the config directory. This can be changed to customise the model accordingly.
+
+### Run pre-commit hooks
+
+```bash
+uv pip install -e ".[dev]"
+uv run pre-commit install
+uv run pre-commit run --all-files
+```
 
 ## Cite
 

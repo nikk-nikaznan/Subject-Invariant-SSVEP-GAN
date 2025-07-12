@@ -1235,6 +1235,7 @@ dependencies = [
     { name = "class-resolver" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "torch" },

@@ -1,4 +1,4 @@
-import logging
+import logging.config
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +10,23 @@ from scipy import signal
 logger = logging.getLogger(__name__)
 
 
+<<<<<<< HEAD
+=======
+def setup_logging_from_config(config_path: Path = Path("config/logging_config.yaml")) -> None:
+    """Load logging configuration from YAML file."""
+    if config_path.exists():
+        with config_path.open() as f:
+            config = yaml.safe_load(f)
+
+        logs_dir = Path("logs")
+        logs_dir.mkdir(exist_ok=True)
+
+        logging.config.dictConfig(config)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+
+>>>>>>> main
 def load_config_yaml(config_file: str) -> dict[str, Any]:
     """Load a YAML file describing the training setup."""
     with Path(config_file).open() as f:
