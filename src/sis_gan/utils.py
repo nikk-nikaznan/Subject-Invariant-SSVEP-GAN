@@ -92,7 +92,7 @@ def get_accuracy(actual: torch.Tensor, predicted: torch.Tensor) -> float:
     return float(actual.eq(predicted).sum()) / actual.size(0)
 
 
-def save_model(
+def save_subject_model(
     subject_predictor: torch.nn.Module,
     test_idx: int,
 ) -> None:

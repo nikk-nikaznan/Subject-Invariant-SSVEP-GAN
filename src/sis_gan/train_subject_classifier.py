@@ -10,7 +10,14 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from sis_gan.models import EEGCNNSubject, weights_init
-from sis_gan.utils import get_accuracy, load_config_yaml, load_data, load_label, save_model, setup_logging_from_config
+from sis_gan.utils import (
+    get_accuracy,
+    load_config_yaml,
+    load_data,
+    load_label,
+    save_subject_model,
+    setup_logging_from_config,
+)
 
 setup_logging_from_config()
 logger = logging.getLogger(__name__)
@@ -27,13 +34,14 @@ torch.cuda.manual_seed(seed_n)
 class SubjectClassifier:
     """
     Class for training subject classification models on EEG data.
+
     Supports both stratified train/test split and leave-one-out cross-validation.
     """
 
     def __init__(
-        self, 
-        config_file: str, 
-        validation_strategy: Literal["stratified", "loo"] = "stratified"
+        self,
+        config_file: str,
+        validation_strategy: Literal["stratified", "loo"] = "stratified",
     ) -> None:
         """
         Initialize the SubjectClassifier with configuration and data.
@@ -41,11 +49,12 @@ class SubjectClassifier:
         Args:
             config_file (str): Path to the YAML configuration file.
             validation_strategy (Literal["stratified", "loo"]): Validation strategy to use.
+
         """
         self.validation_strategy = validation_strategy
         self.input_data: np.ndarray = load_data()
         self.config = load_config_yaml(config_file)
-        
+
         # Only load labels for stratified split (not needed for LOO)
         if validation_strategy == "stratified":
             self.input_label: np.ndarray = load_label()
@@ -64,19 +73,20 @@ class SubjectClassifier:
             weight_decay=self.config["wdecay"],
         )
 
-    def _train_model(self, save_model_flag: bool = True, test_idx: int = 1) -> float:
+    def _train_model(self, *, save_model: bool = True, test_idx: int = 1) -> float:
         """
         Train the subject classification model using the provided configuration.
-        
+
         Args:
-            save_model_flag (bool): Whether to save the trained model.
+            save_model (bool): Whether to save the trained model.
             test_idx (int): Index for saving the model (used in LOO).
-            
+
         Returns:
             float: Training accuracy.
+
         """
         total_accuracy = 0.0
-        
+
         for epoch in range(self.config["num_epochs"]):
             logger.info("Starting training epoch %d", epoch)
             cumulative_accuracy = 0.0
@@ -94,27 +104,28 @@ class SubjectClassifier:
 
                 _, predicted = torch.max(outputs, 1)
                 cumulative_accuracy += get_accuracy(labels, predicted)
-                
+
             epoch_accuracy = cumulative_accuracy / len(self.trainloader) * 100
             total_accuracy = epoch_accuracy  # Keep last epoch accuracy
-            
+
         logger.info("Training accuracy: %.1f%%", total_accuracy)
-        
-        if save_model_flag:
-            save_model(self.subject_predictor, test_idx)
-            
+
+        if save_model:
+            save_subject_model(self.subject_predictor, test_idx)
+
         return total_accuracy
 
     def _eval_model(self) -> float:
         """
         Evaluate the trained model on the test dataset.
-        
+
         Returns:
             float: Test accuracy.
+
         """
         self.subject_predictor.eval()
         test_cumulative_accuracy = 0.0
-        
+
         with torch.no_grad():
             for _, data in enumerate(self.testloader, 0):
                 test_inputs, test_labels = data
@@ -133,22 +144,20 @@ class SubjectClassifier:
     def _perform_stratified_split(self) -> tuple[float, float]:
         """
         Perform stratified train/test split and train the model.
-        
+
         Returns:
             tuple[float, float]: Training and test accuracies.
+
         """
         logger.info("Using stratified train/test split validation")
-    
+
         # Create subject labels for stratification
         num_subjects = self.input_data.shape[0]
-        train_subject = [
-            np.zeros(self.input_data.shape[1]) + num_s 
-            for num_s in range(num_subjects)
-        ]
+        train_subject = [np.zeros(self.input_data.shape[1]) + num_s for num_s in range(num_subjects)]
         train_subject = np.array(train_subject).astype(np.int64)
         eeg_subject = np.concatenate(train_subject)
         eeg_data = np.concatenate(self.input_data)
-        
+
         # Update config to match actual number of subjects
         self.config["num_subjects"] = num_subjects
         logger.info("Number of subjects in data: %d", num_subjects)
@@ -159,12 +168,12 @@ class SubjectClassifier:
         train_idx, test_idx = next(sss.split(eeg_data, eeg_subject))
 
         # Prepare data loaders
-        X_train, y_train = eeg_data[train_idx], eeg_subject[train_idx]
-        X_test, y_test = eeg_data[test_idx], eeg_subject[test_idx]
+        x_train, y_train = eeg_data[train_idx], eeg_subject[train_idx]
+        x_test, y_test = eeg_data[test_idx], eeg_subject[test_idx]
 
-        train_input = torch.from_numpy(X_train)
+        train_input = torch.from_numpy(x_train)
         train_label = torch.from_numpy(y_train)
-        test_input = torch.from_numpy(X_test)
+        test_input = torch.from_numpy(x_test)
         test_label = torch.from_numpy(y_test)
 
         self.trainloader = DataLoader(
@@ -183,20 +192,21 @@ class SubjectClassifier:
         # Train and evaluate
         self._load_model()
         self._build_training_objects()
-        train_accuracy = self._train_model(save_model_flag=True, test_idx=1)
+        train_accuracy = self._train_model(save_model=True, test_idx=1)
         test_accuracy = self._eval_model()
-        
+
         return train_accuracy, test_accuracy
 
     def _perform_loo(self) -> list[float]:
         """
         Perform leave-one-out cross-validation and train models.
-        
+
         Returns:
             list[float]: Training accuracies for each fold.
+
         """
         logger.info("Using leave-one-out cross-validation")
-        
+
         loo = LeaveOneOut()
         accuracies = []
 
@@ -206,10 +216,7 @@ class SubjectClassifier:
 
             # Prepare training data
             datainput = self.input_data[train_idx]
-            train_subject = [
-                np.zeros(datainput.shape[1]) + num_s 
-                for num_s in range(datainput.shape[0])
-            ]
+            train_subject = [np.zeros(datainput.shape[1]) + num_s for num_s in range(datainput.shape[0])]
             train_subject = np.array(train_subject).astype(np.int64)
             eeg_subject = np.concatenate(train_subject)
             eeg_data = np.concatenate(datainput)
@@ -227,7 +234,7 @@ class SubjectClassifier:
             # Train model for this fold
             self._load_model()
             self._build_training_objects()
-            train_accuracy = self._train_model(save_model_flag=True, test_idx=test_idx_int)
+            train_accuracy = self._train_model(save_model=True, test_idx=test_idx_int)
             accuracies.append(train_accuracy)
 
         return accuracies
@@ -235,21 +242,21 @@ class SubjectClassifier:
     def train(self) -> tuple[float, ...] | list[float]:
         """
         Train subject classifier using the specified validation strategy.
-        
+
         Returns:
             Union[tuple[float, ...], list[float]]: Accuracies based on validation strategy.
+
         """
         if self.validation_strategy == "stratified":
             return self._perform_stratified_split()
-        elif self.validation_strategy == "loo":
+        if self.validation_strategy == "loo":
             return self._perform_loo()
-        else:
-            error_msg = f"Unknown validation strategy: {self.validation_strategy}"
-            raise ValueError(error_msg)
+        error_msg = f"Unknown validation strategy: {self.validation_strategy}"
+        raise ValueError(error_msg)
 
 
 def main() -> None:
-    """Main function to run the subject classifier training."""
+    """Run the subject classifier training."""
     parser = argparse.ArgumentParser(description="Train subject classification model")
     parser.add_argument(
         "--config_file",
@@ -269,11 +276,11 @@ def main() -> None:
     # Train the classifier
     classifier = SubjectClassifier(
         config_file=args.config_file,
-        validation_strategy=args.validation_strategy
+        validation_strategy=args.validation_strategy,
     )
-    
+
     results = classifier.train()
-    
+
     # Log final results
     if args.validation_strategy == "stratified":
         train_acc, test_acc = results
