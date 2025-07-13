@@ -5,16 +5,21 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 Code to accompany our International Conference on Pattern Recognition (ICPR) paper entitled -
-[Leveraging Synthetic Subject Invariant EEG Signalsfor Zero Calibration BCI](https://arxiv.org/pdf/2007.11544.pdf).
+[Leveraging Synthetic Subject Invariant EEG Signals for Zero Calibration BCI](https://arxiv.org/pdf/2007.11544.pdf).
 
-The code is structured as follows:
+## Code Structure
 
-- `cnn_subject_classification.py` contains code for subject-biometric classification network;
-- `cnn_subject_softmax.py` contains code for Softmax probability values taken for the generated data;
-- `generate_sisgan.py` Our proposed SIS-GAN based model for generating subject invariant SSVEP-based EEG data;
-- `pretrain_subject_class.py` contains code for pre-training subject-biometric classification network;
-- `ssvep_Classification.py` our SSVEP classification network;
-- `models.py` contains all the related models;
+### Main Components
+
+- `generate_sisgan.py` - Our proposed SIS-GAN model for generating subject-invariant SSVEP-based EEG data
+- `train_subject_classifier.py` - Subject classification network for biometric pattern detection
+- `ssvep_classification.py` - SSVEP frequency classification network
+- `plot_subject_softmax.py` - Subject-invariance evaluation using softmax probability analysis
+- `models.py` - Neural network architectures for all models
+
+### Supporting Modules
+
+- `utils.py` - Helper functions for data loading, logging, and model utilities
 
 ## Dependencies and Requirements
 
@@ -32,27 +37,66 @@ uv pip install -e .
 
 ## How to Use
 
-- The `sample_data` folder contains randomly generated data that is used to represent the shape of the input data. It is important to note this is not the real EEG data.
+### Complete Zero-Calibration Pipeline (Leave-One-Out)
 
-- Create the pre-train subject weight. This can be done by running:
+This is the main pipeline for zero-calibration BCI evaluation, where we simulate having an unseen subject:
+
+**Step 1: Create pretrained subject classification weights**
 
 ```bash
-uv run python -m sis_gan.pretrain_subject
+uv run python -m sis_gan.train_subject_classifier --validation_strategy loo
 ```
 
-- Then, train sis_gan model by using the pretrain subject weight as a frozen network.
+_This trains subject classifiers using leave-one-out cross-validation, creating pretrained weights for each "unseen" subject scenario._
+
+**Step 2: Generate synthetic EEG data**
 
 ```bash
 uv run python -m sis_gan.generate_sisgan
 ```
 
-- Lastly, evaluate the performance of the generated synthetic data by running:
+_Trains the SIS-GAN using data from "seen" subjects (excluding the test subject) and generates synthetic SSVEP signals._
+
+**Step 3: Evaluate SSVEP classification performance**
 
 ```bash
 uv run python -m sis_gan.ssvep_classification
 ```
 
-Model configurations are controlled by using yaml files that can be found in the config directory. This can be changed to customise the model accordingly.
+_Tests how well SSVEP frequency classification works when trained on synthetic data and tested on real unseen subject data._
+
+**Step 4: Verify subject-invariance**
+
+```bash
+uv run python -m sis_gan.plot_subject_softmax
+```
+
+_Analyzes whether the generated synthetic data contains subject-specific biometric patterns. Low, uniformly distributed probabilities indicate successful subject-invariance._
+
+### Subject Classification Only (Stratified Split)
+
+If you only want to evaluate subject classification performance on the full dataset without running the complete pipeline:
+
+```bash
+uv run python -m sis_gan.train_subject_classifier --validation_strategy stratified
+```
+
+_Performs standard train/test split (80/20) for subject classification evaluation across the entire dataset._
+
+## Data
+
+The `sample_data` folder contains randomly generated data representing the shape of the input EEG data. **Note: This is not real EEG data and is provided only for demonstration purposes.**
+
+## Configuration
+
+Model configurations are controlled using YAML files in the `config` directory. Modify these files to customize:
+
+- Network architectures
+- Training hyperparameters
+- Data processing parameters
+- Validation strategies
+
+## Development
 
 ### Run pre-commit hooks
 
@@ -62,11 +106,17 @@ uv run pre-commit install
 uv run pre-commit run --all-files
 ```
 
-## Cite
+## Key Concepts
 
-Please cite the associated paper for this work if you use this code:
+- **Subject-Invariant**: Generated data should not contain biometric patterns specific to individual subjects
+- **Zero-Calibration**: Using synthetic data to train models for completely unseen subjects without any calibration data
+- **Leave-One-Out**: Each subject is treated as "unseen" while others are used for training, simulating real-world deployment scenarios
 
-```
+## Citation
+
+Please cite the associated paper if you use this code:
+
+```bibtex
 @inproceedings{aznan2021leveraging,
   title={Leveraging Synthetic Subject Invariant EEG Signals for Zero Calibration BCI},
   author={Aznan, Nik Khadijah Nik and Atapour-Abarghouei, Amir and Bonner, Stephen and Connolly, Jason D and Breckon, Toby P},
