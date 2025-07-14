@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class SoftmaxClass:
+class SoftmaxSubject:
     """Class to evaluate and plot softmax probabilities for generated EEG data using a pretrained subject classifier."""
 
     def __init__(self) -> None:
@@ -19,10 +19,11 @@ class SoftmaxClass:
         """Load the pretrained subject classification model."""
         self.subject_predictor: torch.nn.Module = torch.load(
             "pretrain_subject_unseen0.pt",
-            map_location=torch.device("cuda:0"),
+            map_location=device,
+            weights_only=False,
         )
 
-    def _test_model(self) -> None:
+    def _evaluate_model(self) -> None:
         """Test the model on the test dataset and compute mean softmax probabilities."""
         self.subject_predictor.eval()
         with torch.no_grad():
@@ -58,10 +59,10 @@ class SoftmaxClass:
         )
 
         self._load_pretrain_model()
-        self._test_model()
+        self._evaluate_model()
         self._plot_softmax()
 
 
 if __name__ == "__main__":
-    trainer = SoftmaxClass()
+    trainer = SoftmaxSubject()
     trainer.perform_softmax()

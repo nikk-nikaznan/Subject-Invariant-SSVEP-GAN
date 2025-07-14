@@ -1,3 +1,4 @@
+*.pdf
 *.npy
 *.pt
 .DS_Store
