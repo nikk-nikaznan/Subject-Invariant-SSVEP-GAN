@@ -232,6 +232,7 @@ class SubjectClassifier:
             )
 
             # Train model for this fold
+            self.config["num_subjects"] = datainput.shape[0]  # Update number of subjects dynamically
             self._load_model()
             self._build_training_objects()
             train_accuracy = self._train_model(save_model=True, test_idx=test_idx_int)
