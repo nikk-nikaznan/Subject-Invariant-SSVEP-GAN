@@ -37,6 +37,8 @@ uv pip install -e .
 
 ## How to Use
 
+Please follow the steps below to run the code to train the various components. Please read the **Configuration** section to understand how to modify the training parameters to suit real-world applications. The number of epochs is set to 1 by default for demonstration purposes, but you will need to increase this for meaningful results.
+
 ### Complete Zero-Calibration Pipeline (Leave-One-Out)
 
 This is the main pipeline for zero-calibration BCI evaluation, where we simulate having an unseen subject:
@@ -95,6 +97,8 @@ Model configurations are controlled using YAML files in the `config` directory. 
 - Training hyperparameters
 - Data processing parameters
 - Validation strategies
+
+**Note:** By default, all models are only trained for a single epoch for demonstration purposes. Adjust the `num_epochs` parameter in the config files to train for longer - you will need to increase the number of epochs for meaningful results.
 
 ## Development
 
